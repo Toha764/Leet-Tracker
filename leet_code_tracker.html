@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC Diagnostic Workflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,500;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+/* ── Dark Theme (default) ── */
+:root{
+  --bg: #050505;
+  --bg-card: #0c0c0c;
+  --bg-hover: #141414;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --text-dark: #4b5563;
+  --accent: #ffffff;
+  --green: #4ade80;
+  --green-bg: rgba(74, 222, 128, 0.1);
+  --orange: #fbbf24;
+  --orange-bg: rgba(251, 191, 36, 0.1);
+  --red: #f87171;
+  --red-bg: rgba(248, 113, 113, 0.1);
+  --blue: #60a5fa;
+  --blue-bg: rgba(96, 165, 250, 0.1);
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Playfair Display', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --shadow-heavy: rgba(0,0,0,0.5);
+  --modal-overlay: rgba(0,0,0,0.8);
+  --hm-0: rgba(255,255,255,0.04);
+  --hm-1: rgba(74,222,128,0.2);
+  --hm-2: rgba(74,222,128,0.4);
+  --hm-3: rgba(74,222,128,0.6);
+  --hm-4: rgba(74,222,128,0.85);
+  --tier-locked: #4b5563;
+  --tier-learning: #60a5fa;
+  --tier-proficient: #4ade80;
+  --tier-mastered: #fbbf24;
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --bg: #fafafa; --bg-card: #ffffff; --bg-hover: #f0f1f3;
+  --border: rgba(0,0,0,0.07); --border-hover: rgba(0,0,0,0.14);
+  --text-main: #111827; --text-muted: #6b7280; --text-dark: #9ca3af;
+  --accent: #000000;
+  --green: #16a34a; --green-bg: rgba(22,163,74,0.08);
+  --orange: #d97706; --orange-bg: rgba(217,119,6,0.08);
+  --red: #dc2626; --red-bg: rgba(220,38,38,0.08);
+  --blue: #2563eb; --blue-bg: rgba(37,99,235,0.08);
+  --shadow-heavy: rgba(0,0,0,0.08);
+  --modal-overlay: rgba(255,255,255,0.7);
+  --hm-0: #ebedf0; --hm-1: #9be9a8; --hm-2: #40c463; --hm-3: #30a14e; --hm-4: #216e39;
+  --tier-locked: #9ca3af; --tier-learning: #3b82f6; --tier-proficient: #22c55e; --tier-mastered: #f59e0b;
+}
+[data-theme="light"] .diff-easy { color: #059669; background: rgba(5,150,105,0.1); border-color: rgba(5,150,105,0.25); }
+[data-theme="light"] .diff-medium { color: #d97706; background: rgba(217,119,6,0.1); border-color: rgba(217,119,6,0.25); }
+[data-theme="light"] .diff-hard { color: #dc2626; background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.25); }
+[data-theme="light"] .modal-overlay { background: var(--modal-overlay); backdrop-filter: blur(6px); }
+[data-theme="light"] .modal { box-shadow: 0 24px 64px rgba(0,0,0,0.15); }
+
+html, body {
+  background: var(--bg); color: var(--text-main); font-family: var(--font-sans);
+  min-height: 100vh; -webkit-font-smoothing: antialiased; transition: background 0.3s, color 0.3s;
+}
+body { padding: 0 20px 60px; max-width: 1100px; margin: 0 auto; }
+
+/* ── Header ── */
+.app-header { display:flex; align-items:center; justify-content:space-between; padding:24px 0; margin-bottom:1.5rem; border-bottom:1px solid var(--border); }
+.app-title { font-weight:600; font-size:16px; letter-spacing:-0.02em; font-family:var(--font-mono); }
+.header-actions { display:flex; gap:8px; align-items:center; }
+.hdr-btn { background:var(--bg-card); border:1px solid var(--border); color:var(--text-main); padding:8px 16px; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; font-family:var(--font-sans); }
+.hdr-btn:hover { background:var(--bg-hover); border-color:var(--border-hover); }
+.theme-toggle { background:var(--bg-card); border:1px solid var(--border); color:var(--text-muted); width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; transition:all 0.3s; padding:0; }
+.theme-toggle:hover { background:var(--bg-hover); border-color:var(--border-hover); color:var(--text-main); }
+
+/* ── Timer ── */
+.timer-widget { display:flex; align-items:center; gap:4px; padding:4px 12px; border-radius:100px; border:1px solid var(--border); background:var(--bg-card); font-family:var(--font-mono); font-size:13px; }
+.timer-widget.running { border-color:rgba(74,222,128,0.3); }
+#timer-display { min-width:46px; text-align:center; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+.timer-widget.running #timer-display { color:var(--green); }
+.timer-btn { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:2px 4px; transition:color 0.2s; line-height:1; }
+.timer-btn:hover { color:var(--text-main); }
+
+/* ── Tabs ── */
+.tabs { display:flex; gap:8px; margin-bottom:24px; justify-content:center; }
+.tab { padding:10px 20px; font-size:14px; font-weight:500; cursor:pointer; color:var(--text-muted); background:transparent; border:1px solid transparent; border-radius:100px; transition:all 0.2s; }
+.tab.active { color:var(--bg); background:var(--text-main); }
+.tab:hover:not(.active) { color:var(--text-main); }
+.pane { display:none; } .pane.active { display:block; }
+
+/* ── Cards ── */
+.landio-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; margin-bottom:24px; box-shadow:0 10px 30px -10px var(--shadow-heavy); transition:background 0.3s, border-color 0.3s; }
+
+/* ── Section Headers ── */
+.section-header { display:flex; align-items:center; gap:12px; padding:16px 20px; border-radius:var(--radius) var(--radius) 0 0; font-size:13px; font-weight:600; letter-spacing:0.02em; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02); text-transform:uppercase; position:relative; flex-wrap:wrap; }
+[data-theme="light"] .section-header { background:rgba(0,0,0,0.015); }
+.section-progress-track { position:absolute; bottom:0; left:0; right:0; height:3px; background:var(--border); overflow:hidden; }
+.section-progress-fill { height:3px; border-radius:0 3px 3px 0; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+/* ── Table ── */
+.problem-table { width:100%; border-collapse:collapse; font-size:14px; }
+.problem-table th { font-size:11px; font-weight:500; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; padding:12px 20px; text-align:left; border-bottom:1px solid var(--border); user-select:none; }
+.problem-table th.sortable { cursor:pointer; transition:color 0.2s; }
+.problem-table th.sortable:hover { color:var(--text-main); }
+.sort-arrow { font-size:10px; opacity:0.5; margin-left:2px; }
+.sort-arrow.active { opacity:1; color:var(--text-main); }
+.problem-table td { padding:16px 20px; vertical-align:top; border-bottom:1px solid var(--border); }
+.problem-table tr:last-child td { border-bottom:none; }
+.problem-table tbody tr { transition:background 0.15s; }
+.problem-table tbody tr:hover { background:rgba(255,255,255,0.02); }
+[data-theme="light"] .problem-table tbody tr:hover { background:rgba(0,0,0,0.015); }
+
+/* ── Badges ── */
+.diff-badge { display:inline-block; padding:4px 12px; border-radius:100px; font-size:11px; font-weight:600; font-family:var(--font-sans); letter-spacing:0.04em; border:1px solid; }
+.diff-easy { color:#34d399; background:rgba(52,211,153,0.12); border-color:rgba(52,211,153,0.3); }
+.diff-medium { color:#f59e0b; background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.3); }
+.diff-hard { color:#ef4444; background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.3); }
+.mistake-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; border:1px solid; }
+.m-none { background:var(--green-bg); color:var(--green); border-color:rgba(74,222,128,0.2); }
+.m-conceptual { background:var(--red-bg); color:var(--red); border-color:rgba(248,113,113,0.2); }
+.m-implementation { background:var(--orange-bg); color:var(--orange); border-color:rgba(251,191,36,0.2); }
+.m-edge_case { background:var(--blue-bg); color:var(--blue); border-color:rgba(96,165,250,0.2); }
+.m-complexity { background:rgba(182,158,255,0.1); color:#b69eff; border-color:rgba(182,158,255,0.2); }
+.m-reading { background:rgba(255,209,102,0.1); color:#ffd166; border-color:rgba(255,209,102,0.2); }
+.m-unsolved { background:transparent; color:var(--text-muted); border-color:var(--border); }
+.due-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; font-family:var(--font-mono); background:var(--red-bg); color:var(--red); border:1px solid rgba(248,113,113,0.2); }
+.future-date { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+.attempt-count { font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text-main); }
+.src-badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:600; font-family:var(--font-mono); margin-right:4px; background:var(--bg-hover); color:var(--text-muted); border:1px solid var(--border); }
+
+/* ── Reflection ── */
+.reflection-cell { max-width:320px; font-size:12px; color:var(--text-muted); line-height:1.6; }
+.reflection-red { color:var(--red); }
+.reflection-blue { color:var(--blue); }
+.reflection-green { color:var(--green); }
+
+/* ── Actions ── */
+.row-actions { display:flex; gap:6px; }
+.row-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; border:1px solid transparent; background:transparent; color:var(--text-muted); cursor:pointer; font-size:13px; transition:all 0.2s; }
+.row-btn:hover { background:var(--border); color:var(--text-main); }
+.row-btn.del:hover { background:var(--red-bg); color:var(--red); }
+.add-row-btn { display:flex; align-items:center; justify-content:center; gap:8px; background:transparent; border:none; border-top:1px solid var(--border); padding:16px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; width:100%; transition:all 0.2s; border-radius:0 0 var(--radius-lg) var(--radius-lg); }
+.add-row-btn:hover { background:rgba(255,255,255,0.02); color:var(--text-main); }
+[data-theme="light"] .add-row-btn:hover { background:rgba(0,0,0,0.015); }
+
+/* ── Modal ── */
+.modal-overlay { display:none; position:fixed; inset:0; background:var(--modal-overlay); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:32px; width:min(600px,94vw); max-height:90vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,0.8); }
+.modal h3 { font-size:18px; font-weight:500; margin-bottom:24px; font-family:var(--font-serif); letter-spacing:0.02em; }
+.form-group { margin-bottom:20px; }
+.form-group label { display:block; font-size:12px; font-weight:500; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em; }
+.form-group input, .form-group select, .form-group textarea { width:100%; font-size:14px; padding:12px 16px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text-main); font-family:var(--font-mono); outline:none; transition:border-color 0.2s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--text-muted); }
+.form-group textarea { font-family:var(--font-sans); resize:vertical; min-height:160px; line-height:1.6; }
+.form-group textarea::placeholder { color:var(--text-dark); font-size:13px; line-height:1.7; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.btn-row { display:flex; gap:12px; justify-content:flex-end; margin-top:32px; }
+.btn { padding:10px 20px; border-radius:100px; font-size:13px; font-weight:500; cursor:pointer; font-family:var(--font-sans); transition:all 0.2s; border:1px solid transparent; }
+.btn-primary { background:var(--text-main); color:var(--bg); }
+.btn-primary:hover { opacity:0.9; }
+.btn-secondary { background:transparent; color:var(--text-muted); border-color:var(--border); }
+.btn-secondary:hover { background:var(--border); color:var(--text-main); }
+
+/* ── Dashboard ── */
+.metric-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:16px; margin-bottom:24px; }
+.metric-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:24px; display:flex; flex-direction:column; gap:8px; transition:background 0.3s; }
+.metric-card .val { font-size:32px; font-weight:400; color:var(--text-main); font-family:var(--font-sans); }
+.metric-card .lbl { font-size:12px; color:var(--text-muted); font-weight:500; text-transform:uppercase; letter-spacing:0.05em; }
+.weakness-bar { margin-bottom:16px; }
+.weakness-bar-label { display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px; color:var(--text-main); }
+.weakness-bar-track { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.weakness-bar-fill { height:6px; border-radius:3px; transition:width 0.5s; }
+
+/* ── Skill Tree ── */
+.skill-tree-container { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; position:relative; transition:background 0.3s; margin-bottom:24px; }
+.skill-tree-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0; }
+.skill-tree-title { font-size:14px; font-weight:500; color:var(--text-muted); }
+.xp-badge { display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--tier-mastered); }
+.xp-badge .xp-level { color:var(--text-muted); font-weight:500; }
+.skill-tree-canvas-wrap { position:relative; width:100%; height:440px; }
+#skillTreeCanvas { width:100%; height:100%; display:block; }
+#skill-tooltip { display:none; position:fixed; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:14px 18px; font-size:12px; pointer-events:none; z-index:200; min-width:190px; box-shadow:0 8px 24px var(--shadow-heavy); line-height:1.7; }
+.skill-tree-legend { display:flex; gap:20px; padding:12px 24px 16px; justify-content:center; flex-wrap:wrap; }
+.legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); font-weight:500; }
+.legend-dot { width:8px; height:8px; border-radius:50%; }
+.legend-dot.locked { background:var(--tier-locked); }
+.legend-dot.learning { background:var(--tier-learning); }
+.legend-dot.proficient { background:var(--tier-proficient); }
+.legend-dot.mastered { background:var(--tier-mastered); box-shadow:0 0 6px var(--tier-mastered); }
+
+/* ── Heatmap ── */
+.heatmap-card { padding:20px 24px; }
+.heatmap-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+.heatmap-header h4 { font-size:14px; font-weight:500; color:var(--text-muted); }
+.streak-badges { display:flex; gap:16px; font-size:12px; color:var(--text-muted); }
+.streak-badges .streak-val { font-weight:600; color:var(--text-main); font-family:var(--font-mono); margin-right:4px; }
+.heatmap-body { display:flex; gap:4px; overflow-x:auto; padding-bottom:4px; }
+.heatmap-labels { display:flex; flex-direction:column; gap:3px; padding-top:18px; font-size:10px; color:var(--text-dark); font-family:var(--font-mono); min-width:28px; }
+.heatmap-labels span { height:12px; line-height:12px; }
+.heatmap-months { display:flex; gap:3px; font-size:10px; color:var(--text-dark); font-family:var(--font-mono); margin-bottom:3px; padding-left:32px; }
+.heatmap-grid { display:flex; gap:3px; }
+.heatmap-week { display:flex; flex-direction:column; gap:3px; }
+.heatmap-cell { width:12px; height:12px; border-radius:2px; transition:outline 0.15s; }
+.heatmap-cell:hover { outline:1px solid var(--text-muted); outline-offset:1px; }
+.hm-0{background:var(--hm-0)}.hm-1{background:var(--hm-1)}.hm-2{background:var(--hm-2)}.hm-3{background:var(--hm-3)}.hm-4{background:var(--hm-4)}.hm-empty{background:transparent}
+
+/* ── Reflection Guide ── */
+.png-card { background:rgba(255,255,255,0.02); border:1px solid var(--border); padding:16px; border-radius:8px; margin-bottom:12px; }
+[data-theme="light"] .png-card { background:rgba(0,0,0,0.015); }
+.png-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.png-pill { font-family:var(--font-mono); font-size:11px; padding:2px 10px; border-radius:100px; border:1px solid; font-weight:500; }
+.png-pill.u { background:rgba(96,165,250,0.1); color:var(--blue); border-color:rgba(96,165,250,0.2); }
+.png-pill.e { background:rgba(74,222,128,0.1); color:var(--green); border-color:rgba(74,222,128,0.2); }
+.png-pill.b { background:rgba(250,204,21,0.1); color:#eab308; border-color:rgba(250,204,21,0.2); }
+.png-pill.s { background:rgba(248,113,113,0.1); color:var(--red); border-color:rgba(248,113,113,0.2); }
+.png-pill.r1 { background:rgba(168,85,247,0.1); color:#a855f7; border-color:rgba(168,85,247,0.2); }
+.png-pill.r2 { background:rgba(156,163,175,0.1); color:var(--text-muted); border-color:rgba(156,163,175,0.2); }
+.png-title { font-size:14px; color:var(--text-main); font-weight:600; font-family:var(--font-sans); }
+.png-grid { display:grid; grid-template-columns:140px 1fr; gap:8px 16px; font-size:12px; line-height:1.5; }
+.png-grid-label { color:var(--text-muted); font-family:var(--font-mono); }
+.png-grid-val { color:#d1d5db; }
+[data-theme="light"] .png-grid-val { color:#374151; }
+.png-section-title { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin:24px 0 12px; }
+
+/* ── Utilities ── */
+a.prob-link { color:var(--text-main); text-decoration:none; font-weight:500; }
+a.prob-link:hover { text-decoration:underline; }
+.filter-bar { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; align-items:center; justify-content:center; }
+.filter-btn { padding:6px 16px; border-radius:100px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--text-muted); transition:all 0.2s; }
+.filter-btn.active, .filter-btn:hover { background:var(--border); color:var(--text-main); }
+.filter-search { flex:1; min-width:200px; max-width:300px; padding:8px 16px; border-radius:100px; border:1px solid var(--border); background:transparent; color:var(--text-main); font-size:13px; outline:none; }
+.filter-search:focus { border-color:var(--text-muted); }
+.overdue-banner { background:var(--red-bg); border:1px solid rgba(248,113,113,0.2); border-radius:var(--radius-sm); padding:12px 16px; font-size:13px; color:var(--red); margin-bottom:24px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:500; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">LC_Tracker</div>
+  <div class="header-actions">
+    <div class="timer-widget" id="timer-widget">
+      <span id="timer-display">00:00</span>
+      <button class="timer-btn" id="timer-toggle" onclick="toggleTimer()" title="Start / Pause">▶</button>
+      <button class="timer-btn" onclick="resetTimer()" title="Reset">↻</button>
+    </div>
+    <button class="hdr-btn" onclick="importJSON()">Import</button>
+    <button class="hdr-btn" onclick="exportJSON()">Export</button>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">☀</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('tracker')">Workflow Log</button>
+  <button class="tab" onclick="switchTab('dashboard')">Analytics</button>
+  <button class="tab" onclick="switchTab('tutorial')">Reflection Guide</button>
+</div>
+
+<!-- ═══════════ TRACKER PANE ═══════════ -->
+<div id="tab-tracker" class="pane active">
+  <div id="overdue-banner" class="overdue-banner" style="display:none">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="overdue-text"></span>
+  </div>
+  <div class="filter-bar">
+    <input type="text" class="filter-search" id="search-input" placeholder="Search problems & notes…" oninput="applyFilters()">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" data-filter="due" onclick="setFilter('due',this)" style="color:var(--red);border-color:rgba(248,113,113,0.3);">⚠ Due</button>
+    <button class="filter-btn" data-filter="unsolved" onclick="setFilter('unsolved',this)">Unsolved</button>
+    <button class="filter-btn" data-filter="clean" onclick="setFilter('clean',this)">Clean</button>
+    <button class="filter-btn" data-filter="friction" onclick="setFilter('friction',this)">Friction</button>
+  </div>
+  <div id="tracker-sections"></div>
+</div>
+
+<!-- ═══════════ ANALYTICS PANE ═══════════ -->
+<div id="tab-dashboard" class="pane">
+  <div class="skill-tree-container">
+    <div class="skill-tree-header">
+      <span class="skill-tree-title">Mastery Constellation</span>
+      <div class="xp-badge" id="total-xp-badge">⚡ <span id="total-xp-val">0</span> XP <span class="xp-level" id="total-level"></span></div>
+    </div>
+    <div class="skill-tree-canvas-wrap"><canvas id="skillTreeCanvas"></canvas></div>
+    <div class="skill-tree-legend">
+      <span class="legend-item"><span class="legend-dot locked"></span>Locked</span>
+      <span class="legend-item"><span class="legend-dot learning"></span>Learning</span>
+      <span class="legend-item"><span class="legend-dot proficient"></span>Proficient</span>
+      <span class="legend-item"><span class="legend-dot mastered"></span>Mastered</span>
+    </div>
+  </div>
+  <div id="skill-tooltip"></div>
+  <div class="metric-grid" id="metrics"></div>
+  <div class="landio-card heatmap-card">
+    <div class="heatmap-header"><h4>Activity Heatmap</h4><div class="streak-badges" id="streak-info"></div></div>
+    <div id="heatmap-container"></div>
+  </div>
+  <div class="landio-card">
+    <h4 style="font-size:14px;font-weight:500;margin-bottom:24px;color:var(--text-muted);">Friction Pattern Diagnosis</h4>
+    <div id="weakness-bars"></div>
+  </div>
+  <div class="landio-card">
+    <h4 style="font-size:14px;font-weight:500;margin-bottom:24px;color:var(--text-muted);">Clean Solve Distribution by Topic</h4>
+    <div style="position:relative;width:100%;height:220px;"><canvas id="topicChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══════════ REFLECTION GUIDE PANE ═══════════ -->
+<div id="tab-tutorial" class="pane">
+  <div class="landio-card">
+    <h4 style="font-size:18px;font-family:var(--font-serif);margin-bottom:6px;color:var(--text-main);">The Reflection Framework</h4>
+    <p style="font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:16px;">Use this 6-step framework to guide your thoughts before, during, and after solving.</p>
+
+    <div class="png-section-title">THE 6-STEP FRAMEWORK</div>
+
+    <div class="png-card">
+      <div class="png-header">
+        <span class="png-pill u">understand</span>
+        <span class="png-title">Understand — restate in own words</span>
+      </div>
+      <div class="png-grid">
+        <div class="png-grid-label">define I/O</div><div class="png-grid-val">what exactly goes in and comes out?</div>
+        <div class="png-grid-label">enough info?</div><div class="png-grid-val">are there any hidden assumptions?</div>
+        <div class="png-grid-label">visualize</div><div class="png-grid-val">draw the starting state</div>
+      </div>
+    </div>
+
+    <div class="png-card">
+      <div class="png-header">
+        <span class="png-pill e">model</span>
+        <span class="png-title">Every — smallest example</span>
+      </div>
+      <div class="png-grid">
+        <div class="png-grid-label">pattern?</div><div class="png-grid-val">map the new problem onto a solved one</div>
+        <div class="png-grid-label">inv or proc?</div><div class="png-grid-val">invariant or procedural?</div>
+        <div class="png-grid-label">edge cases?</div><div class="png-grid-val">empty inputs, negative numbers, boundaries</div>
+      </div>
+    </div>
+
+    <div class="png-card">
+      <div class="png-header">
+        <span class="png-pill b">plan</span>
+        <span class="png-title">Block — pseudocode</span>
+      </div>
+      <div class="png-grid">
+        <div class="png-grid-label">skip</div><div class="png-grid-val">skip the hard part temporarily to keep momentum</div>
+      </div>
+    </div>
+
+    <div class="png-card">
+      <div class="png-header">
+        <span class="png-pill s">execute</span>
+        <span class="png-title">Solve — start simple</span>
+      </div>
+      <div class="png-grid">
+        <div class="png-grid-label">easy version</div><div class="png-grid-val">solve the easy version first</div>
+      </div>
+    </div>
+
+    <div class="png-card">
+      <div class="png-header">
+        <span class="png-pill r1">refine</span>
+        <span class="png-title">Right — efficient approach?</span>
+      </div>
+      <div class="png-grid">
+        <div class="png-grid-label">improve</div><div class="png-grid-val">can we optimize time/space?</div>
+      </div>
+    </div>
+
+    <div class="png-card">
+      <div class="png-header">
+        <span class="png-pill r2">reflect</span>
+        <span class="png-title">Reflect — what was the key insight?</span>
+      </div>
+      <div class="png-grid">
+        <div class="png-grid-label">stall point</div><div class="png-grid-val">where did I stall?</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ MODAL ═══════════ -->
+<div id="add-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h3 id="modal-title">Log Reflection</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Problem name</label><input id="f-name" type="text" placeholder="e.g. Two Sum"></div>
+      <div class="form-group"><label>Topic</label><select id="f-topic"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Diagnostic Result</label>
+        <select id="f-mistake">
+          <option value="unsolved" selected>Unsolved / Not Attempted</option>
+          <option value="none">Clean Solve (No friction)</option>
+          <option value="conceptual">Conceptual (Didn't recognize pattern)</option>
+          <option value="implementation">Implementation (Struggled to code it)</option>
+          <option value="edge_case">Edge Case (Missed a scenario)</option>
+          <option value="complexity">Complexity (Sub-optimal Time/Space)</option>
+          <option value="reading">Reading Comprehension (Misunderstood)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Difficulty</label>
+        <select id="f-diff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label>Manual Attempt Count</label><input id="f-attempt" type="number" min="0" placeholder="e.g. 0"></div>
+    <div class="form-group"><label>Reflection Log</label>
+      <textarea id="f-ref" placeholder="
+1. Exploring various solutions - good
+2. Didn't discuss time and space complexity.
+   Next Time: Discuss complexity before writing code next time.
+3. Translating ideas into code - wrote buggy code initially.
+   Next Time: Find a good edge-case example to dry run next time.
+4. Debugging my code - good, but missed a bug that tracing could have caught. "></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit-btn" onclick="submitProblem()">Save Entry</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="import-input" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+// ═══════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════
+const TOPICS = [
+  {id:'arr',  label:'Arrays & Hashing',    short:'Arrays'},
+  {id:'two',  label:'Two Pointers',        short:'Two Ptr'},
+  {id:'sw',   label:'Sliding Window',      short:'Window'},
+  {id:'stk',  label:'Stack',               short:'Stack'},
+  {id:'bin',  label:'Binary Search',       short:'BinSearch'},
+  {id:'ll',   label:'Linked List',         short:'LinkedList'},
+  {id:'tree', label:'Trees',               short:'Trees'},
+  {id:'tries',label:'Tries',               short:'Tries'},
+  {id:'heap', label:'Heap / Priority Queue',short:'Heap'},
+  {id:'back', label:'Backtracking',        short:'Backtrack'},
+  {id:'graph',label:'Graphs',              short:'Graphs'},
+  {id:'dp',   label:'Dynamic Programming', short:'DP'},
+  {id:'gre',  label:'Greedy',              short:'Greedy'},
+  {id:'int',  label:'Intervals',           short:'Intervals'},
+  {id:'math', label:'Math & Geometry',     short:'Math'},
+  {id:'bit',  label:'Bit Manipulation',    short:'Bits'}
+];
+
+const TOPIC_CONNECTIONS = [
+  ['Arrays & Hashing','Two Pointers'],
+  ['Arrays & Hashing','Sliding Window'],
+  ['Arrays & Hashing','Binary Search'],
+  ['Two Pointers','Binary Search'],
+  ['Two Pointers','Linked List'],
+  ['Stack','Trees'],
+  ['Stack','Linked List'],
+  ['Trees','Graphs'],
+  ['Trees','Tries'],
+  ['Graphs','Dynamic Programming'],
+  ['Graphs','Backtracking'],
+  ['Graphs','Heap / Priority Queue'],
+  ['Dynamic Programming','Greedy'],
+  ['Dynamic Programming','Backtracking'],
+  ['Math & Geometry','Bit Manipulation'],
+  ['Intervals','Greedy'],
+];
+
+const XP_VALUES = { attempt:5, clean_easy:15, clean_medium:40, clean_hard:100, review:5 };
+
+const TIER_COLORS = {
+  dark:  { locked:'#4b5563', learning:'#60a5fa', proficient:'#4ade80', mastered:'#fbbf24' },
+  light: { locked:'#9ca3af', learning:'#3b82f6', proficient:'#22c55e', mastered:'#f59e0b' }
+};
+
+const MISTAKES = {
+  'unsolved':{lbl:'Unsolved',cls:'m-unsolved'},'none':{lbl:'Clean Solve',cls:'m-none'},
+  'conceptual':{lbl:'Conceptual',cls:'m-conceptual'},'implementation':{lbl:'Implementation',cls:'m-implementation'},
+  'edge_case':{lbl:'Edge Case',cls:'m-edge_case'},'complexity':{lbl:'Complexity',cls:'m-complexity'},
+  'reading':{lbl:'Reading',cls:'m-reading'}
+};
+
+const INTERVALS = [1,3,7,14,30];
+const REF_TEMPLATE = `1. Exploring various solutions - \n2. Discussing time and space complexity - \n3. Translating ideas into code - \n4. Debugging my code - \n5. Walking through with an example - `;
+
+const topicSelect = document.getElementById('f-topic');
+TOPICS.forEach(t => { const o=document.createElement('option'); o.value=t.label; o.textContent=t.label; topicSelect.appendChild(o); });
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let problems=[], topicChart=null, editingId=null, activeFilter='all', searchTerm='';
+let sortCol=null, sortDir='asc';
+let skillTreeAnimId=null, skillTreeNodes=[], particles=[], lastTimestamp=0;
+let timerRunning=false, timerStartTime=null, timerElapsed=0, timerInterval=null;
+
+// ═══════════════════════════════════════════
+//  DATE UTILITIES
+// ═══════════════════════════════════════════
+function today(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function addDays(s,n){if(!s)return null;const p=s.split('-'),d=new Date(p[0],p[1]-1,p[2]);d.setDate(d.getDate()+n);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function isDue(nr){return nr?nr<=today():false;}
+function fmtDate(s){if(!s)return'';const p=s.split('-'),d=new Date(p[0],p[1]-1,p[2]);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
+function fmtDateISO(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+
+// ═══════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════
+function save(){try{localStorage.setItem('lc_logger_landio',JSON.stringify(problems));}catch(e){}}
+function load(){try{const r=localStorage.getItem('lc_logger_landio');if(r)problems=JSON.parse(r);}catch(e){problems=[];}}
+function exportJSON(){const b=new Blob([JSON.stringify({version:9,exported:today(),problems},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`lc_backup_${today()}.json`;a.click();}
+function importJSON(){document.getElementById('import-input').click();}
+function handleImport(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result),imp=d.problems||d,ids=new Set(problems.map(p=>p.id));imp.forEach(p=>{if(!ids.has(p.id))problems.push(p);});save();renderTracker();alert('Data merged.');}catch(err){alert('Import failed.');}};r.readAsText(f);e.target.value='';}
+
+// ═══════════════════════════════════════════
+//  THEME
+// ═══════════════════════════════════════════
+function initTheme(){const s=localStorage.getItem('lc_theme')||'dark';document.documentElement.setAttribute('data-theme',s);updateThemeIcon(s);}
+function toggleTheme(){const c=document.documentElement.getAttribute('data-theme'),n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('lc_theme',n);updateThemeIcon(n);if(document.getElementById('tab-dashboard').classList.contains('active'))renderDashboard();}
+function updateThemeIcon(t){document.getElementById('theme-toggle').textContent=t==='dark'?'☀':'☾';}
+function isDark(){return document.documentElement.getAttribute('data-theme')!=='light';}
+
+// ═══════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════
+function toggleTimer(){timerRunning?pauseTimer():startTimer();}
+function startTimer(){timerRunning=true;timerStartTime=Date.now()-timerElapsed;timerInterval=setInterval(updateTimerDisplay,200);document.getElementById('timer-toggle').textContent='⏸';document.getElementById('timer-widget').classList.add('running');}
+function pauseTimer(){timerRunning=false;timerElapsed=Date.now()-timerStartTime;clearInterval(timerInterval);document.getElementById('timer-toggle').textContent='▶';document.getElementById('timer-widget').classList.remove('running');}
+function resetTimer(){timerRunning=false;timerElapsed=0;timerStartTime=null;clearInterval(timerInterval);document.getElementById('timer-display').textContent='00:00';document.getElementById('timer-toggle').textContent='▶';document.getElementById('timer-widget').classList.remove('running');}
+function updateTimerDisplay(){const el=Date.now()-timerStartTime,ts=Math.floor(el/1000);document.getElementById('timer-display').textContent=`${String(Math.floor(ts/60)).padStart(2,'0')}:${String(ts%60).padStart(2,'0')}`;}
+
+// ═══════════════════════════════════════════
+//  GAMIFICATION ENGINE
+// ═══════════════════════════════════════════
+function calculateTopicXP(label){
+  let xp=0;
+  problems.filter(p=>p.topic===label).forEach(p=>{
+    if(!p.mistake||p.mistake==='unsolved')return;
+    if(p.mistake==='none'){xp+=p.diff==='easy'?XP_VALUES.clean_easy:p.diff==='hard'?XP_VALUES.clean_hard:XP_VALUES.clean_medium;}
+    else{xp+=XP_VALUES.attempt;}
+    if(p.attemptNo>1)xp+=(p.attemptNo-1)*XP_VALUES.review;
+  });
+  return xp;
+}
+function calculateTotalXP(){let t=0;TOPICS.forEach(tp=>{t+=calculateTopicXP(tp.label);});return t;}
+function getTopicLevel(xp){return Math.min(20,Math.floor(xp/50));}
+function getOverallLevel(){return getTopicLevel(Math.floor(calculateTotalXP()/TOPICS.length));}
+
+function getMasteryTier(label){
+  const all=problems.filter(p=>p.topic===label);
+  const att=all.filter(p=>p.mistake&&p.mistake!=='unsolved');
+  if(att.length===0)return'locked';
+  const clean=att.filter(p=>p.mistake==='none').length;
+  const rate=all.length>0?clean/all.length:0;
+  if(rate>=0.7)return'mastered';
+  if(rate>=0.3)return'proficient';
+  return'learning';
+}
+
+function getDecayMultiplier(label){
+  const tp=problems.filter(p=>p.topic===label&&p.lastAttempt);
+  if(tp.length===0)return 1;
+  const dates=tp.map(p=>p.lastAttempt).filter(Boolean).sort();
+  if(dates.length===0)return 1;
+  const last=dates[dates.length-1],parts=last.split('-');
+  const ld=new Date(parts[0],parts[1]-1,parts[2]),now=new Date();
+  const days=Math.floor((now-ld)/(864e5));
+  if(days<=14)return 1;if(days<=30)return 0.85;if(days<=60)return 0.6;return 0.35;
+}
+
+function getDaysSinceActive(label){
+  const tp=problems.filter(p=>p.topic===label&&p.lastAttempt);
+  if(tp.length===0)return-1;
+  const dates=tp.map(p=>p.lastAttempt).filter(Boolean).sort();
+  if(dates.length===0)return-1;
+  const last=dates[dates.length-1],parts=last.split('-');
+  return Math.floor((new Date()-new Date(parts[0],parts[1]-1,parts[2]))/864e5);
+}
+
+function getTierColor(tier){
+  const mode=isDark()?'dark':'light';
+  return TIER_COLORS[mode][tier]||TIER_COLORS[mode].locked;
+}
+
+// ═══════════════════════════════════════════
+//  FILTERING & SORTING
+// ═══════════════════════════════════════════
+function setFilter(f){activeFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));renderTracker();}
+function applyFilters(){searchTerm=document.getElementById('search-input').value.toLowerCase();renderTracker();}
+function filterProblems(list){
+  return list.filter(p=>{
+    if(searchTerm){const nm=p.name.toLowerCase().includes(searchTerm),nt=p.ref&&p.ref.toLowerCase().includes(searchTerm);if(!nm&&!nt)return false;}
+    if(activeFilter==='unsolved')return p.mistake==='unsolved'||!p.mistake;
+    if(activeFilter==='clean')return p.mistake==='none';
+    if(activeFilter==='friction')return p.mistake&&!['none','unsolved'].includes(p.mistake);
+    if(activeFilter==='due')return isDue(p.nextReview);
+    return true;
+  });
+}
+function setSort(col){if(sortCol===col){sortDir=sortDir==='asc'?'desc':'asc';}else{sortCol=col;sortDir='asc';}renderTracker();}
+function sortProblems(list){
+  if(!sortCol)return list;
+  const dO={easy:0,medium:1,hard:2},mO={unsolved:0,reading:1,conceptual:2,edge_case:3,implementation:4,complexity:5,none:6};
+  return[...list].sort((a,b)=>{let va,vb;switch(sortCol){case'diff':va=dO[a.diff||'medium'];vb=dO[b.diff||'medium'];break;case'mistake':va=mO[a.mistake||'unsolved'];vb=mO[b.mistake||'unsolved'];break;case'attemptNo':va=a.attemptNo||0;vb=b.attemptNo||0;break;case'nextReview':va=a.nextReview||'9999';vb=b.nextReview||'9999';break;default:return 0;}if(va<vb)return sortDir==='asc'?-1:1;if(va>vb)return sortDir==='asc'?1:-1;return 0;});
+}
+function sortArrow(col){if(sortCol!==col)return`<span class="sort-arrow">⇅</span>`;return`<span class="sort-arrow active">${sortDir==='asc'?'↑':'↓'}</span>`;}
+
+// ═══════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════
+function openModal(topic,id){
+  editingId=id||null;const t=document.getElementById('modal-title');
+  if(editingId){const p=problems.find(x=>x.id===editingId);t.textContent='Edit Reflection';document.getElementById('f-name').value=p.name||'';document.getElementById('f-topic').value=p.topic||'';document.getElementById('f-diff').value=p.diff||'medium';document.getElementById('f-mistake').value=p.mistake||'unsolved';document.getElementById('f-attempt').value=p.attemptNo||0;document.getElementById('f-ref').value=p.ref||'';}
+  else{t.textContent='Log Problem';document.getElementById('f-name').value='';document.getElementById('f-topic').value=topic||TOPICS[0].label;document.getElementById('f-diff').value='medium';document.getElementById('f-mistake').value='unsolved';document.getElementById('f-attempt').value=0;document.getElementById('f-ref').value=REF_TEMPLATE;}
+  document.getElementById('add-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('add-modal').classList.remove('open');}
+function submitProblem(){
+  const name=document.getElementById('f-name').value.trim();if(!name){alert('Requires name');return;}
+  const mistake=document.getElementById('f-mistake').value,curDate=today();
+  let ma=parseInt(document.getElementById('f-attempt').value,10);if(isNaN(ma)||ma<0)ma=0;
+  let tp=editingId?problems.find(x=>x.id===editingId):null;
+  if(!tp){tp={id:Date.now(),url:'#',sources:''};problems.push(tp);}
+  tp.name=name;tp.topic=document.getElementById('f-topic').value;tp.diff=document.getElementById('f-diff').value;tp.ref=document.getElementById('f-ref').value.trim();tp.lastAttempt=curDate;tp.attemptNo=ma;
+  if(mistake!=='unsolved'){if(mistake==='none'){let idx=ma-1;if(idx<0)idx=0;if(idx>=INTERVALS.length)idx=INTERVALS.length-1;tp.nextReview=addDays(curDate,INTERVALS[idx]);}else{tp.nextReview=addDays(curDate,1);}}else{tp.nextReview=null;}
+  tp.mistake=mistake;save();closeModal();renderTracker();
+}
+function deleteProblem(id){if(!confirm('Delete entry?'))return;problems=problems.filter(x=>x.id!==id);save();renderTracker();}
+
+// ═══════════════════════════════════════════
+//  RENDERING
+// ═══════════════════════════════════════════
+function renderReflection(text){
+  if(!text)return'<span style="color:var(--text-dark);font-size:12px;font-style:italic;">No notes yet.</span>';
+  return text.split('\n').filter(Boolean).map(line=>`<div style="margin-bottom:4px;">${line}</div>`).join('');
+}
+function renderSrcBadges(s){if(!s)return'';return s.split('').filter(c=>'NTGS'.includes(c)).map(c=>`<span class="src-badge">${c}</span>`).join('');}
+
+function renderTracker(){
+  const container=document.getElementById('tracker-sections');container.innerHTML='';
+  const dueTotal=problems.filter(p=>isDue(p.nextReview)).length;
+  const banner=document.getElementById('overdue-banner');
+  if(dueTotal>0){banner.style.display='flex';document.getElementById('overdue-text').textContent=`${dueTotal} problem(s) require your attention today.`;}else{banner.style.display='none';}
+  TOPICS.forEach(topic=>{
+    const tAll=problems.filter(p=>p.topic===topic.label);
+    const tProbs=sortProblems(filterProblems(tAll));
+    if(tProbs.length===0&&(searchTerm||activeFilter!=='all'))return;
+    const solved=tAll.filter(p=>p.mistake==='none').length;
+    const attempted=tAll.filter(p=>p.mistake&&p.mistake!=='unsolved').length;
+    const pct=tAll.length>0?Math.round(attempted/tAll.length*100):0;
+    const pColor=pct>=70?'var(--green)':pct>=30?'var(--orange)':'var(--text-dark)';
+    const xp=calculateTopicXP(topic.label),lv=getTopicLevel(xp);
+    const sec=document.createElement('div');sec.className='landio-card';sec.style.padding='0';sec.style.overflow='hidden';
+    sec.innerHTML=`<div class="section-header"><span>${topic.label}</span><span style="margin-left:auto;font-size:11px;color:var(--text-muted);text-transform:none;">Lv ${lv} · Clean: ${solved} · ${attempted}/${tAll.length}</span><div class="section-progress-track"><div class="section-progress-fill" style="width:${pct}%;background:${pColor}"></div></div></div>`;
+    if(tProbs.length>0){
+      const tbl=document.createElement('table');tbl.className='problem-table';
+      tbl.innerHTML=`<thead><tr><th style="width:20%">Problem</th><th class="sortable" style="width:7%" onclick="setSort('diff')">Diff ${sortArrow('diff')}</th><th class="sortable" style="width:14%" onclick="setSort('mistake')">Diagnostic ${sortArrow('mistake')}</th><th class="sortable" style="width:5%" onclick="setSort('attemptNo')">Att ${sortArrow('attemptNo')}</th><th class="sortable" style="width:10%" onclick="setSort('nextReview')">Next ${sortArrow('nextReview')}</th><th style="width:34%">Reflection</th><th style="width:10%">Actions</th></tr></thead>`;
+      const tbody=document.createElement('tbody');
+      tProbs.forEach(p=>{
+        const m=MISTAKES[p.mistake||'unsolved'];let dH='<span style="color:var(--text-muted)">—</span>';
+        if(p.nextReview){dH=isDue(p.nextReview)?`<span class="due-badge">⚠ DUE</span>`:`<span class="future-date">${fmtDate(p.nextReview)}</span>`;}
+        tbody.innerHTML+=`<tr><td><a class="prob-link" href="${p.url}" target="_blank">${p.name}</a><br><div style="margin-top:6px">${renderSrcBadges(p.sources||'')}</div></td><td><span class="diff-badge diff-${p.diff||'medium'}">${(p.diff||'medium').charAt(0).toUpperCase()+(p.diff||'medium').slice(1)}</span></td><td><span class="mistake-badge ${m.cls}">${m.lbl}</span></td><td><span class="attempt-count">${p.attemptNo||0}</span></td><td>${dH}</td><td class="reflection-cell">${renderReflection(p.ref)}</td><td><div class="row-actions"><button class="row-btn" onclick="openModal('${topic.label}',${p.id})">✎</button><button class="row-btn del" onclick="deleteProblem(${p.id})">✕</button></div></td></tr>`;
+      });
+      tbl.appendChild(tbody);sec.appendChild(tbl);
+    }
+    const addBtn=document.createElement('button');addBtn.className='add-row-btn';addBtn.innerHTML=`+ Add problem to ${topic.label}`;addBtn.onclick=()=>openModal(topic.label,null);sec.appendChild(addBtn);container.appendChild(sec);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  SKILL TREE — GAMIFIED CONSTELLATION
+// ═══════════════════════════════════════════
+function initSkillTreeCanvas(){
+  const c=document.getElementById('skillTreeCanvas');if(!c)return;
+  c.addEventListener('mousemove',handleSkillTreeHover);
+  c.addEventListener('mouseleave',()=>{document.getElementById('skill-tooltip').style.display='none';c.style.cursor='default';});
+}
+function resizeSkillTreeCanvas(){
+  const c=document.getElementById('skillTreeCanvas'),w=c.parentElement;if(!w)return;
+  const r=w.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  c.width=r.width*dpr;c.height=r.height*dpr;c.style.width=r.width+'px';c.style.height=r.height+'px';
+}
+function hexToRgba(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`;}
+
+function computeSkillTreeData(){
+  return TOPICS.map((topic,i)=>{
+    const all=problems.filter(p=>p.topic===topic.label);
+    const att=all.filter(p=>p.mistake&&p.mistake!=='unsolved');
+    const clean=att.filter(p=>p.mistake==='none').length;
+    const xp=calculateTopicXP(topic.label);
+    const level=getTopicLevel(xp);
+    const tier=getMasteryTier(topic.label);
+    const decay=getDecayMultiplier(topic.label);
+    const mastery=all.length>0?clean/all.length:0;
+    const daysSince=getDaysSinceActive(topic.label);
+    return{topic,index:i,total:all.length,attempted:att.length,clean,mastery,xp,level,tier,decay,daysSince};
+  });
+}
+
+function drawSkillTree(timestamp){
+  const canvas=document.getElementById('skillTreeCanvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d'),dpr=window.devicePixelRatio||1;
+  const w=canvas.width/dpr, h=canvas.height/dpr;
+  ctx.save();ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+  const dark=isDark(), time=(timestamp||0)/1000;
+  const centerX=w/2, centerY=h/2, orbitR=Math.min(w,h)*0.33;
+  const data=computeSkillTreeData();
+
+  // Orbit ring
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.025)':'rgba(0,0,0,0.025)';
+  ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(centerX,centerY,orbitR,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+
+  // Compute positions
+  skillTreeNodes=data.map((d,i)=>{
+    const ang=(i/data.length)*Math.PI*2-Math.PI/2;
+    const x=centerX+orbitR*Math.cos(ang), y=centerY+orbitR*Math.sin(ang);
+    const baseR=d.tier==='locked'?5:7+d.mastery*14;
+    return{...d,x,y,radius:baseR,angle:ang};
+  });
+
+  // ── Inter-topic connections ──
+  TOPIC_CONNECTIONS.forEach(([lA,lB])=>{
+    const nA=skillTreeNodes.find(n=>n.topic.label===lA);
+    const nB=skillTreeNodes.find(n=>n.topic.label===lB);
+    if(!nA||!nB)return;
+    const weakerTier=['locked','learning','proficient','mastered'][Math.min(['locked','learning','proficient','mastered'].indexOf(nA.tier),['locked','learning','proficient','mastered'].indexOf(nB.tier))];
+    const color=getTierColor(weakerTier);
+    const midX=(nA.x+nB.x)/2, midY=(nA.y+nB.y)/2;
+    const cpX=midX+(centerX-midX)*0.25, cpY=midY+(centerY-midY)*0.25;
+    let alpha,lw;
+    if(weakerTier==='locked'){alpha=0.04;lw=0.5;ctx.setLineDash([3,6]);}
+    else if(weakerTier==='learning'){alpha=0.12;lw=1;ctx.setLineDash([]);}
+    else if(weakerTier==='proficient'){alpha=0.25+Math.sin(time*1.5)*0.05;lw=1.5;ctx.setLineDash([]);}
+    else{alpha=0.4+Math.sin(time*2)*0.1;lw=2;ctx.setLineDash([]);}
+    // Apply decay to connection
+    const decayMul=Math.min(nA.decay,nB.decay);alpha*=decayMul;
+    ctx.strokeStyle=hexToRgba(color,alpha);ctx.lineWidth=lw;
+    ctx.beginPath();ctx.moveTo(nA.x,nA.y);ctx.quadraticCurveTo(cpX,cpY,nB.x,nB.y);ctx.stroke();
+    ctx.setLineDash([]);
+    // Glow for strong connections
+    if(weakerTier==='mastered'||weakerTier==='proficient'){
+      ctx.strokeStyle=hexToRgba(color,alpha*0.3);ctx.lineWidth=lw+4;
+      ctx.beginPath();ctx.moveTo(nA.x,nA.y);ctx.quadraticCurveTo(cpX,cpY,nB.x,nB.y);ctx.stroke();
+    }
+  });
+
+  // ── Faint center lines ──
+  skillTreeNodes.forEach(n=>{
+    const a=n.tier==='locked'?0.02:0.04;
+    ctx.strokeStyle=dark?`rgba(255,255,255,${a})`:`rgba(0,0,0,${a})`;
+    ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(centerX,centerY);ctx.lineTo(n.x,n.y);ctx.stroke();
+  });
+
+  // ── Center hub ──
+  const totalMastery=data.reduce((s,d)=>s+d.mastery,0)/data.length;
+  const cPulse=Math.sin(time*2)*0.08+0.92, cR=14*cPulse;
+  const cGrad=ctx.createRadialGradient(centerX,centerY,0,centerX,centerY,cR*4);
+  cGrad.addColorStop(0,dark?`rgba(255,255,255,${0.06+totalMastery*0.12})`:`rgba(0,0,0,${0.03+totalMastery*0.06})`);
+  cGrad.addColorStop(1,'transparent');
+  ctx.fillStyle=cGrad;ctx.beginPath();ctx.arc(centerX,centerY,cR*4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=dark?`rgba(255,255,255,${0.5+totalMastery*0.5})`:`rgba(0,0,0,${0.3+totalMastery*0.5})`;
+  ctx.beginPath();ctx.arc(centerX,centerY,cR,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=dark?'#050505':'#fafafa';ctx.font='bold 10px Inter,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('LC',centerX,centerY);
+
+  // ── Nodes ──
+  skillTreeNodes.forEach((node,i)=>{
+    const pulse=Math.sin(time*2+i*0.4)*0.5+0.5;
+    const color=getTierColor(node.tier);
+    const dm=node.decay; // decay multiplier
+
+    if(node.tier==='locked'){
+      // Dim locked node
+      ctx.fillStyle=dark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.04)';
+      ctx.beginPath();ctx.arc(node.x,node.y,node.radius,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';
+      ctx.lineWidth=1;ctx.setLineDash([2,3]);ctx.beginPath();ctx.arc(node.x,node.y,node.radius,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    } else {
+      // Glow
+      const glowR=node.radius*(2+node.mastery*2);
+      const glowA=(0.06+node.mastery*0.2+pulse*0.04)*dm;
+      const gG=ctx.createRadialGradient(node.x,node.y,0,node.x,node.y,glowR);
+      gG.addColorStop(0,hexToRgba(color,glowA));gG.addColorStop(1,hexToRgba(color,0));
+      ctx.fillStyle=gG;ctx.beginPath();ctx.arc(node.x,node.y,glowR,0,Math.PI*2);ctx.fill();
+      // Mastered halo
+      if(node.tier==='mastered'){
+        const haloR=node.radius+4+pulse*3;
+        ctx.strokeStyle=hexToRgba(color,(0.3+pulse*0.15)*dm);ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(node.x,node.y,haloR,0,Math.PI*2);ctx.stroke();
+      }
+      // Node body
+      ctx.fillStyle=hexToRgba(color,(0.6+node.mastery*0.4)*dm);
+      ctx.beginPath();ctx.arc(node.x,node.y,node.radius,0,Math.PI*2);ctx.fill();
+      // Inner core
+      ctx.fillStyle=hexToRgba(color,0.85*dm);
+      ctx.beginPath();ctx.arc(node.x,node.y,node.radius*0.45,0,Math.PI*2);ctx.fill();
+    }
+
+    // Label
+    const labelOff=node.radius+16;
+    const lx=centerX+(orbitR+labelOff)*Math.cos(node.angle);
+    const ly=centerY+(orbitR+labelOff)*Math.sin(node.angle);
+    ctx.fillStyle=node.tier==='locked'?(dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.15)'):(dark?'#e5e7eb':'#374151');
+    ctx.globalAlpha=node.tier==='locked'?0.5*dm:dm;
+    ctx.font='500 11px Inter,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(node.topic.short,lx,ly);
+    // Level label
+    if(node.tier!=='locked'){
+      ctx.font='600 9px "JetBrains Mono",monospace';ctx.fillStyle=hexToRgba(color,0.7*dm);
+      ctx.fillText(`Lv${node.level}`,lx,ly+13);
+    }
+    ctx.globalAlpha=1;
+    // Decay indicator
+    if(node.tier!=='locked'&&node.decay<0.85){
+      ctx.font='10px Inter,sans-serif';ctx.fillStyle=dark?'rgba(251,191,36,0.6)':'rgba(217,119,6,0.6)';
+      ctx.fillText('⚠',node.x,node.y-node.radius-8);
+    }
+  });
+
+  // ── Particles (mastered sparkle) ──
+  particles.forEach(p=>{
+    ctx.fillStyle=hexToRgba('#fbbf24',p.life*0.7);
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt*0.4;
+    if(p.life<=0)particles.splice(i,1);
+  }
+}
+function emitSparkle(x,y){
+  if(particles.length>150)return;
+  const ang=Math.random()*Math.PI*2,spd=Math.random()*12+4;
+  particles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,life:1,size:Math.random()*1.5+0.5});
+}
+
+function handleSkillTreeHover(e){
+  const c=e.target,r=c.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const tt=document.getElementById('skill-tooltip');
+  let hov=null;
+  for(const n of skillTreeNodes){const dx=mx-n.x,dy=my-n.y;if(Math.sqrt(dx*dx+dy*dy)<Math.max(n.radius,10)+6){hov=n;break;}}
+  if(hov){
+    c.style.cursor='pointer';tt.style.display='block';
+    tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-60)+'px';
+    const pct=hov.total>0?Math.round(hov.clean/hov.total*100):0;
+    const tierLabels={locked:'🔒 Locked',learning:'📘 Learning',proficient:'🟢 Proficient',mastered:'⭐ Mastered'};
+    let decayHtml='';
+    if(hov.tier!=='locked'&&hov.daysSince>=0){
+      if(hov.daysSince>14)decayHtml=`<div style="color:var(--orange);margin-top:6px;font-weight:500">⚠ ${hov.daysSince}d idle — review recommended</div>`;
+      else decayHtml=`<div style="margin-top:4px;opacity:0.5">Last active: ${hov.daysSince}d ago</div>`;
+    }
+    tt.innerHTML=`<div style="font-weight:600;margin-bottom:2px;color:${getTierColor(hov.tier)}">${hov.topic.label}</div>
+      <div style="font-size:11px;margin-bottom:8px">${tierLabels[hov.tier]}</div>
+      <div>Level: <strong>${hov.level}</strong> · XP: <strong>${hov.xp}</strong></div>
+      <div style="margin-top:4px;padding-top:6px;border-top:1px solid var(--border)">Clean: <strong>${hov.clean}</strong> / ${hov.total}</div>
+      <div>Attempted: <strong>${hov.attempted}</strong></div>
+      <div>Mastery: <strong>${pct}%</strong></div>${decayHtml}`;
+  } else { c.style.cursor='default';tt.style.display='none'; }
+}
+
+function startSkillTreeAnim(){
+  if(skillTreeAnimId)return;resizeSkillTreeCanvas();lastTimestamp=performance.now();
+  function animate(ts){
+    const dt=Math.min((ts-lastTimestamp)/1000,0.1);lastTimestamp=ts;
+    updateParticles(dt);
+    // Emit sparkles for mastered nodes
+    skillTreeNodes.forEach(n=>{if(n.tier==='mastered'&&n.decay>0.5&&Math.random()<0.06)emitSparkle(n.x,n.y);});
+    drawSkillTree(ts);skillTreeAnimId=requestAnimationFrame(animate);
+  }
+  skillTreeAnimId=requestAnimationFrame(animate);
+}
+function stopSkillTreeAnim(){if(skillTreeAnimId){cancelAnimationFrame(skillTreeAnimId);skillTreeAnimId=null;}}
+
+// ═══════════════════════════════════════════
+//  HEATMAP & STREAKS
+// ═══════════════════════════════════════════
+function getActivityMap(){const a={};problems.forEach(p=>{if(p.lastAttempt&&p.mistake&&p.mistake!=='unsolved')a[p.lastAttempt]=(a[p.lastAttempt]||0)+1;});return a;}
+function calculateStreaks(){
+  const act={};problems.forEach(p=>{if(p.lastAttempt&&p.mistake&&p.mistake!=='unsolved')act[p.lastAttempt]=true;});
+  let cur=0;const d=new Date();while(true){const ds=fmtDateISO(d);if(act[ds]){cur++;d.setDate(d.getDate()-1);}else break;}
+  const dates=Object.keys(act).sort();let mx=0,tmp=0;
+  if(dates.length>0){tmp=1;mx=1;for(let i=1;i<dates.length;i++){const pp=dates[i-1].split('-'),cp=dates[i].split('-');const diff=Math.round((new Date(cp[0],cp[1]-1,cp[2])-new Date(pp[0],pp[1]-1,pp[2]))/864e5);if(diff===1){tmp++;mx=Math.max(mx,tmp);}else tmp=1;}}
+  return{current:cur,max:Math.max(mx,cur)};
+}
+function renderHeatmap(){
+  const activity=getActivityMap(),streaks=calculateStreaks();
+  document.getElementById('streak-info').innerHTML=`<span><span class="streak-val">${streaks.current}</span>Current</span><span><span class="streak-val">${streaks.max}</span>Longest</span>`;
+  const td=new Date(),numW=26;const sd=new Date(td);sd.setDate(sd.getDate()-((numW-1)*7+sd.getDay()));
+  const weeks=[];const cur=new Date(sd);
+  for(let w=0;w<numW;w++){const wk=[];for(let d=0;d<7;d++){wk.push({date:new Date(cur),dateStr:fmtDateISO(cur),count:activity[fmtDateISO(cur)]||0,isFuture:cur>td});cur.setDate(cur.getDate()+1);}weeks.push(wk);}
+  let mHtml='<div class="heatmap-months">';let lastM=-1;
+  weeks.forEach((wk,wi)=>{const m=wk[0].date.getMonth();if(m!==lastM){if(wi>0)mHtml+=`<span style="flex:1"></span>`;mHtml+=`<span>${wk[0].date.toLocaleDateString('en',{month:'short'})}</span>`;lastM=m;}});
+  mHtml+='</div>';
+  let gHtml='<div class="heatmap-body"><div class="heatmap-labels"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div><div class="heatmap-grid">';
+  weeks.forEach(wk=>{gHtml+='<div class="heatmap-week">';wk.forEach(d=>{if(d.isFuture){gHtml+='<div class="heatmap-cell hm-empty"></div>';}else{const l=d.count===0?0:d.count===1?1:d.count<=2?2:d.count<=3?3:4;gHtml+=`<div class="heatmap-cell hm-${l}" title="${d.date.toLocaleDateString('en',{month:'short',day:'numeric'})}: ${d.count}"></div>`;}});gHtml+='</div>';});
+  gHtml+='</div></div>';document.getElementById('heatmap-container').innerHTML=mHtml+gHtml;
+}
+
+// ═══════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard(){
+  const att=problems.filter(p=>p.mistake&&p.mistake!=='unsolved');
+  const clean=att.filter(p=>p.mistake==='none').length,friction=att.length-clean;
+  const dueToday=problems.filter(p=>isDue(p.nextReview)).length;
+  const totalXP=calculateTotalXP(),overallLv=getTopicLevel(Math.floor(totalXP/TOPICS.length));
+
+  // XP badge
+  document.getElementById('total-xp-val').textContent=totalXP.toLocaleString();
+  document.getElementById('total-level').textContent=`· Lv ${overallLv}`;
+
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric-card"><div class="val" style="color:var(--red)">${dueToday}</div><div class="lbl">Due Today</div></div>
+    <div class="metric-card"><div class="val">${att.length}</div><div class="lbl">Attempted</div></div>
+    <div class="metric-card"><div class="val" style="color:var(--green)">${clean}</div><div class="lbl">Clean Solves</div></div>
+    <div class="metric-card"><div class="val" style="color:var(--orange)">${friction}</div><div class="lbl">Bottlenecks</div></div>
+    <div class="metric-card"><div class="val" style="color:var(--tier-mastered)">${totalXP}</div><div class="lbl">⚡ Total XP</div></div>
+  `;
+  renderHeatmap();
+  // Weakness bars
+  const weak={'Conceptual':att.filter(p=>p.mistake==='conceptual').length,'Implementation':att.filter(p=>p.mistake==='implementation').length,'Edge Cases':att.filter(p=>p.mistake==='edge_case').length,'Complexity':att.filter(p=>p.mistake==='complexity').length,'Reading':att.filter(p=>p.mistake==='reading').length};
+  const maxS=Math.max(...Object.values(weak),1);const bC=['#f87171','#fbbf24','#60a5fa','#b69eff','#ffd166'];
+  const wb=document.getElementById('weakness-bars');
+  if(friction===0)wb.innerHTML='<p style="font-size:13px;color:var(--text-muted)">Log friction points to generate diagnosis.</p>';
+  else wb.innerHTML=Object.entries(weak).sort((a,b)=>b[1]-a[1]).map(([s,sc],i)=>`<div class="weakness-bar"><div class="weakness-bar-label"><span>${s}</span><span style="color:var(--text-muted)">${sc}</span></div><div class="weakness-bar-track"><div class="weakness-bar-fill" style="width:${Math.round(sc/maxS*100)}%;background:${bC[i]}"></div></div></div>`).join('');
+  // Chart
+  const dk=isDark();
+  Chart.defaults.color=dk?'#9ca3af':'#6b7280';Chart.defaults.borderColor=dk?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';Chart.defaults.font.family="'Inter',sans-serif";
+  const tc=TOPICS.map(t=>({label:t.short,count:problems.filter(p=>p.topic===t.label&&p.mistake==='none').length}));
+  if(topicChart)topicChart.destroy();
+  topicChart=new Chart(document.getElementById('topicChart'),{type:'bar',data:{labels:tc.map(x=>x.label),datasets:[{data:tc.map(x=>x.count),backgroundColor:dk?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.06)',borderColor:dk?'#ffffff':'#111827',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{stepSize:1}}}}});
+}
+
+// ═══════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['tracker','dashboard','tutorial'][i]===t));
+  document.querySelectorAll('.pane').forEach((el,i)=>el.classList.toggle('active',['tab-tracker','tab-dashboard','tab-tutorial'][i]==='tab-'+t));
+  if(t==='dashboard'){renderDashboard();startSkillTreeAnim();}else{stopSkillTreeAnim();}
+}
+
+// ═══════════════════════════════════════════
+//  EVENTS
+// ═══════════════════════════════════════════
+document.getElementById('add-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+window.addEventListener('resize',()=>{if(document.getElementById('tab-dashboard').classList.contains('active'))resizeSkillTreeCanvas();});
+
+// ═══════════════════════════════════════════
+//  DB SEED (325 Problems)
+// ═══════════════════════════════════════════
+const DB_SEED=[
+{name:'Two Sum',url:'https://leetcode.com/problems/two-sum/',topic:'Arrays & Hashing',diff:'easy',src:'TNGS'},
+{name:'Contains Duplicate',url:'https://leetcode.com/problems/contains-duplicate/',topic:'Arrays & Hashing',diff:'easy',src:'NGS'},
+{name:'Valid Anagram',url:'https://leetcode.com/problems/valid-anagram/',topic:'Arrays & Hashing',diff:'easy',src:'TNG'},
+{name:'Group Anagrams',url:'https://leetcode.com/problems/group-anagrams/',topic:'Arrays & Hashing',diff:'medium',src:'TN'},
+{name:'Top K Frequent Elements',url:'https://leetcode.com/problems/top-k-frequent-elements/',topic:'Arrays & Hashing',diff:'medium',src:'TNS'},
+{name:'Product of Array Except Self',url:'https://leetcode.com/problems/product-of-array-except-self/',topic:'Arrays & Hashing',diff:'medium',src:'TNGS'},
+{name:'Valid Sudoku',url:'https://leetcode.com/problems/valid-sudoku/',topic:'Arrays & Hashing',diff:'medium',src:'N'},
+{name:'Encode and Decode Strings',url:'https://leetcode.com/problems/encode-and-decode-strings/',topic:'Arrays & Hashing',diff:'medium',src:'N'},
+{name:'Longest Consecutive Sequence',url:'https://leetcode.com/problems/longest-consecutive-sequence/',topic:'Arrays & Hashing',diff:'medium',src:'TNS'},
+{name:'Majority Element',url:'https://leetcode.com/problems/majority-element/',topic:'Arrays & Hashing',diff:'easy',src:'GS'},
+{name:'Ransom Note',url:'https://leetcode.com/problems/ransom-note/',topic:'Arrays & Hashing',diff:'easy',src:'G'},
+{name:'Longest Common Prefix',url:'https://leetcode.com/problems/longest-common-prefix/',topic:'Arrays & Hashing',diff:'easy',src:''},
+{name:'Subarray Sum Equals K',url:'https://leetcode.com/problems/subarray-sum-equals-k/',topic:'Arrays & Hashing',diff:'medium',src:'T'},
+{name:'Find All Anagrams in a String',url:'https://leetcode.com/problems/find-all-anagrams-in-a-string/',topic:'Arrays & Hashing',diff:'medium',src:'G'},
+{name:'Largest Number',url:'https://leetcode.com/problems/largest-number/',topic:'Arrays & Hashing',diff:'medium',src:''},
+{name:'Sort Colors',url:'https://leetcode.com/problems/sort-colors/',topic:'Arrays & Hashing',diff:'medium',src:'TGS'},
+{name:'Move Zeroes',url:'https://leetcode.com/problems/move-zeroes/',topic:'Arrays & Hashing',diff:'easy',src:'S'},
+{name:'Squares of a Sorted Array',url:'https://leetcode.com/problems/squares-of-a-sorted-array/',topic:'Arrays & Hashing',diff:'easy',src:'S'},
+{name:'Insert Delete GetRandom O(1)',url:'https://leetcode.com/problems/insert-delete-getrandom-o1/',topic:'Arrays & Hashing',diff:'medium',src:''},
+{name:'First Missing Positive',url:'https://leetcode.com/problems/first-missing-positive/',topic:'Arrays & Hashing',diff:'hard',src:'TS'},
+{name:'Find All Numbers Disappeared in Array',url:'https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/',topic:'Arrays & Hashing',diff:'easy',src:'S'},
+{name:'Merge Sorted Array',url:'https://leetcode.com/problems/merge-sorted-array/',topic:'Arrays & Hashing',diff:'easy',src:''},
+{name:'Next Permutation',url:'https://leetcode.com/problems/next-permutation/',topic:'Arrays & Hashing',diff:'medium',src:'G'},
+{name:'Game of Life',url:'https://leetcode.com/problems/game-of-life/',topic:'Arrays & Hashing',diff:'medium',src:''},
+{name:'Rotate Array',url:'https://leetcode.com/problems/rotate-array/',topic:'Arrays & Hashing',diff:'medium',src:'T'},
+{name:'Remove Element',url:'https://leetcode.com/problems/remove-element/',topic:'Arrays & Hashing',diff:'easy',src:''},
+{name:'Range Sum Query - Immutable',url:'https://leetcode.com/problems/range-sum-query-immutable/',topic:'Arrays & Hashing',diff:'easy',src:'S'},
+{name:'Range Sum Query 2D - Immutable',url:'https://leetcode.com/problems/range-sum-query-2d-immutable/',topic:'Arrays & Hashing',diff:'medium',src:''},
+{name:'Find the Duplicate Number',url:'https://leetcode.com/problems/find-the-duplicate-number/',topic:'Arrays & Hashing',diff:'medium',src:'NS'},
+{name:'Find All Duplicates in an Array',url:'https://leetcode.com/problems/find-all-duplicates-in-an-array/',topic:'Arrays & Hashing',diff:'medium',src:'S'},
+{name:'Convert 1D Array Into 2D Array',url:'https://leetcode.com/problems/convert-1d-array-into-2d-array/',topic:'Arrays & Hashing',diff:'easy',src:'S'},
+{name:'Contiguous Array',url:'https://leetcode.com/problems/contiguous-array/',topic:'Arrays & Hashing',diff:'medium',src:''},
+{name:'Remove Duplicates from Sorted Array',url:'https://leetcode.com/problems/remove-duplicates-from-sorted-array/',topic:'Arrays & Hashing',diff:'easy',src:''},
+{name:'Valid Palindrome',url:'https://leetcode.com/problems/valid-palindrome/',topic:'Two Pointers',diff:'easy',src:'TNG'},
+{name:'Two Sum II',url:'https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/',topic:'Two Pointers',diff:'medium',src:'N'},
+{name:'3Sum',url:'https://leetcode.com/problems/3sum/',topic:'Two Pointers',diff:'medium',src:'TNGS'},
+{name:'3Sum Closest',url:'https://leetcode.com/problems/3sum-closest/',topic:'Two Pointers',diff:'medium',src:'S'},
+{name:'Container With Most Water',url:'https://leetcode.com/problems/container-with-most-water/',topic:'Two Pointers',diff:'medium',src:'TNGS'},
+{name:'Trapping Rain Water',url:'https://leetcode.com/problems/trapping-rain-water/',topic:'Two Pointers',diff:'hard',src:'TNGS'},
+{name:'Reverse String',url:'https://leetcode.com/problems/reverse-string/',topic:'Two Pointers',diff:'easy',src:''},
+{name:'Valid Palindrome II',url:'https://leetcode.com/problems/valid-palindrome-ii/',topic:'Two Pointers',diff:'easy',src:''},
+{name:'3Sum Smaller',url:'https://leetcode.com/problems/3sum-smaller/',topic:'Two Pointers',diff:'medium',src:''},
+{name:'Subarray Product Less Than K',url:'https://leetcode.com/problems/subarray-product-less-than-k/',topic:'Two Pointers',diff:'medium',src:'S'},
+{name:'4Sum',url:'https://leetcode.com/problems/4sum/',topic:'Two Pointers',diff:'medium',src:''},
+{name:'Backspace String Compare',url:'https://leetcode.com/problems/backspace-string-compare/',topic:'Two Pointers',diff:'easy',src:'S'},
+{name:'Shortest Unsorted Continuous Subarray',url:'https://leetcode.com/problems/shortest-unsorted-continuous-subarray/',topic:'Two Pointers',diff:'medium',src:''},
+{name:'Circular Array Loop',url:'https://leetcode.com/problems/circular-array-loop/',topic:'Two Pointers',diff:'medium',src:''},
+{name:'Is Subsequence',url:'https://leetcode.com/problems/is-subsequence/',topic:'Two Pointers',diff:'easy',src:'S'},
+{name:'Best Time to Buy and Sell Stock',url:'https://leetcode.com/problems/best-time-to-buy-and-sell-stock/',topic:'Sliding Window',diff:'easy',src:'TNGS'},
+{name:'Longest Substring Without Repeating Characters',url:'https://leetcode.com/problems/longest-substring-without-repeating-characters/',topic:'Sliding Window',diff:'medium',src:'TNGS'},
+{name:'Longest Repeating Character Replacement',url:'https://leetcode.com/problems/longest-repeating-character-replacement/',topic:'Sliding Window',diff:'medium',src:'TNS'},
+{name:'Permutation in String',url:'https://leetcode.com/problems/permutation-in-string/',topic:'Sliding Window',diff:'medium',src:'TNS'},
+{name:'Minimum Window Substring',url:'https://leetcode.com/problems/minimum-window-substring/',topic:'Sliding Window',diff:'hard',src:'TNS'},
+{name:'Sliding Window Maximum',url:'https://leetcode.com/problems/sliding-window-maximum/',topic:'Sliding Window',diff:'hard',src:'TNS'},
+{name:'Minimum Size Subarray Sum',url:'https://leetcode.com/problems/minimum-size-subarray-sum/',topic:'Sliding Window',diff:'medium',src:'S'},
+{name:'Longest Substring with At Most K Distinct Characters',url:'https://leetcode.com/problems/longest-substring-with-at-most-k-distinct-characters/',topic:'Sliding Window',diff:'medium',src:''},
+{name:'Fruit Into Baskets',url:'https://leetcode.com/problems/fruit-into-baskets/',topic:'Sliding Window',diff:'medium',src:'S'},
+{name:'Max Consecutive Ones III',url:'https://leetcode.com/problems/max-consecutive-ones-iii/',topic:'Sliding Window',diff:'medium',src:''},
+{name:'Substring with Concatenation of All Words',url:'https://leetcode.com/problems/substring-with-concatenation-of-all-words/',topic:'Sliding Window',diff:'hard',src:'S'},
+{name:'Sliding Window Median',url:'https://leetcode.com/problems/sliding-window-median/',topic:'Sliding Window',diff:'hard',src:'S'},
+{name:'Minimum Number of K Consecutive Bit Flips',url:'https://leetcode.com/problems/minimum-number-of-k-consecutive-bit-flips/',topic:'Sliding Window',diff:'hard',src:'S'},
+{name:'Count Unique Characters of All Substrings',url:'https://leetcode.com/problems/count-unique-characters-of-all-substrings-of-a-given-string/',topic:'Sliding Window',diff:'hard',src:'S'},
+{name:'Maximum Average Subarray I',url:'https://leetcode.com/problems/maximum-average-subarray-i/',topic:'Sliding Window',diff:'easy',src:'S'},
+{name:'Valid Parentheses',url:'https://leetcode.com/problems/valid-parentheses/',topic:'Stack',diff:'easy',src:'TNG'},
+{name:'Min Stack',url:'https://leetcode.com/problems/min-stack/',topic:'Stack',diff:'medium',src:'TNG'},
+{name:'Evaluate Reverse Polish Notation',url:'https://leetcode.com/problems/evaluate-reverse-polish-notation/',topic:'Stack',diff:'medium',src:'TNG'},
+{name:'Generate Parentheses',url:'https://leetcode.com/problems/generate-parentheses/',topic:'Stack',diff:'medium',src:'TNS'},
+{name:'Daily Temperatures',url:'https://leetcode.com/problems/daily-temperatures/',topic:'Stack',diff:'medium',src:'TNG'},
+{name:'Car Fleet',url:'https://leetcode.com/problems/car-fleet/',topic:'Stack',diff:'medium',src:'TN'},
+{name:'Largest Rectangle in Histogram',url:'https://leetcode.com/problems/largest-rectangle-in-histogram/',topic:'Stack',diff:'hard',src:'TN'},
+{name:'Implement Queue using Stacks',url:'https://leetcode.com/problems/implement-queue-using-stacks/',topic:'Stack',diff:'easy',src:'G'},
+{name:'Asteroid Collision',url:'https://leetcode.com/problems/asteroid-collision/',topic:'Stack',diff:'medium',src:'T'},
+{name:'Basic Calculator II',url:'https://leetcode.com/problems/basic-calculator-ii/',topic:'Stack',diff:'medium',src:''},
+{name:'Decode String',url:'https://leetcode.com/problems/decode-string/',topic:'Stack',diff:'medium',src:''},
+{name:'Next Greater Element I',url:'https://leetcode.com/problems/next-greater-element-i/',topic:'Stack',diff:'easy',src:''},
+{name:'Next Greater Element II',url:'https://leetcode.com/problems/next-greater-element-ii/',topic:'Stack',diff:'medium',src:''},
+{name:'Remove K Digits',url:'https://leetcode.com/problems/remove-k-digits/',topic:'Stack',diff:'medium',src:''},
+{name:'Online Stock Span',url:'https://leetcode.com/problems/online-stock-span/',topic:'Stack',diff:'medium',src:''},
+{name:'Basic Calculator',url:'https://leetcode.com/problems/basic-calculator/',topic:'Stack',diff:'hard',src:''},
+{name:'Longest Valid Parentheses',url:'https://leetcode.com/problems/longest-valid-parentheses/',topic:'Stack',diff:'hard',src:'T'},
+{name:'Binary Search',url:'https://leetcode.com/problems/binary-search/',topic:'Binary Search',diff:'easy',src:'TNGS'},
+{name:'Search a 2D Matrix',url:'https://leetcode.com/problems/search-a-2d-matrix/',topic:'Binary Search',diff:'medium',src:'NS'},
+{name:'Koko Eating Bananas',url:'https://leetcode.com/problems/koko-eating-bananas/',topic:'Binary Search',diff:'medium',src:'TN'},
+{name:'Find Minimum in Rotated Sorted Array',url:'https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/',topic:'Binary Search',diff:'medium',src:'TNGS'},
+{name:'Search in Rotated Sorted Array',url:'https://leetcode.com/problems/search-in-rotated-sorted-array/',topic:'Binary Search',diff:'medium',src:'TNGS'},
+{name:'Time Based Key-Value Store',url:'https://leetcode.com/problems/time-based-key-value-store/',topic:'Binary Search',diff:'medium',src:'TNG'},
+{name:'Median of Two Sorted Arrays',url:'https://leetcode.com/problems/median-of-two-sorted-arrays/',topic:'Binary Search',diff:'hard',src:'TNS'},
+{name:'First Bad Version',url:'https://leetcode.com/problems/first-bad-version/',topic:'Binary Search',diff:'easy',src:'G'},
+{name:'Find K Closest Elements',url:'https://leetcode.com/problems/find-k-closest-elements/',topic:'Binary Search',diff:'medium',src:'S'},
+{name:'Search a 2D Matrix II',url:'https://leetcode.com/problems/search-a-2d-matrix-ii/',topic:'Binary Search',diff:'medium',src:'S'},
+{name:'Find Peak Element',url:'https://leetcode.com/problems/find-peak-element/',topic:'Binary Search',diff:'medium',src:'TS'},
+{name:'Find First and Last Position',url:'https://leetcode.com/problems/find-first-and-last-position-of-element-in-sorted-array/',topic:'Binary Search',diff:'medium',src:''},
+{name:'Capacity To Ship Packages',url:'https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/',topic:'Binary Search',diff:'medium',src:'T'},
+{name:'Peak Index in Mountain Array',url:'https://leetcode.com/problems/peak-index-in-a-mountain-array/',topic:'Binary Search',diff:'medium',src:'S'},
+{name:'Search in Rotated Sorted Array II',url:'https://leetcode.com/problems/search-in-rotated-sorted-array-ii/',topic:'Binary Search',diff:'medium',src:'S'},
+{name:'Count of Range Sum',url:'https://leetcode.com/problems/count-of-range-sum/',topic:'Binary Search',diff:'hard',src:'S'},
+{name:'Reverse Linked List',url:'https://leetcode.com/problems/reverse-linked-list/',topic:'Linked List',diff:'easy',src:'TNGS'},
+{name:'Merge Two Sorted Lists',url:'https://leetcode.com/problems/merge-two-sorted-lists/',topic:'Linked List',diff:'easy',src:'TNGS'},
+{name:'Linked List Cycle',url:'https://leetcode.com/problems/linked-list-cycle/',topic:'Linked List',diff:'easy',src:'TNGS'},
+{name:'Reorder List',url:'https://leetcode.com/problems/reorder-list/',topic:'Linked List',diff:'medium',src:'TNS'},
+{name:'Remove Nth Node From End',url:'https://leetcode.com/problems/remove-nth-node-from-end-of-list/',topic:'Linked List',diff:'medium',src:'TNS'},
+{name:'Copy List with Random Pointer',url:'https://leetcode.com/problems/copy-list-with-random-pointer/',topic:'Linked List',diff:'medium',src:'N'},
+{name:'Add Two Numbers',url:'https://leetcode.com/problems/add-two-numbers/',topic:'Linked List',diff:'medium',src:'TNS'},
+{name:'LRU Cache',url:'https://leetcode.com/problems/lru-cache/',topic:'Linked List',diff:'medium',src:'TNG'},
+{name:'Merge K Sorted Lists',url:'https://leetcode.com/problems/merge-k-sorted-lists/',topic:'Linked List',diff:'hard',src:'TNS'},
+{name:'Reverse Nodes in k-Group',url:'https://leetcode.com/problems/reverse-nodes-in-k-group/',topic:'Linked List',diff:'hard',src:'TNS'},
+{name:'Middle of Linked List',url:'https://leetcode.com/problems/middle-of-the-linked-list/',topic:'Linked List',diff:'easy',src:'TGS'},
+{name:'Linked List Cycle II',url:'https://leetcode.com/problems/linked-list-cycle-ii/',topic:'Linked List',diff:'medium',src:'S'},
+{name:'Swap Nodes in Pairs',url:'https://leetcode.com/problems/swap-nodes-in-pairs/',topic:'Linked List',diff:'medium',src:'S'},
+{name:'Sort List',url:'https://leetcode.com/problems/sort-list/',topic:'Linked List',diff:'medium',src:'S'},
+{name:'Palindrome Linked List',url:'https://leetcode.com/problems/palindrome-linked-list/',topic:'Linked List',diff:'easy',src:'S'},
+{name:'Intersection of Two Linked Lists',url:'https://leetcode.com/problems/intersection-of-two-linked-lists/',topic:'Linked List',diff:'easy',src:''},
+{name:'Remove Duplicates from Sorted List',url:'https://leetcode.com/problems/remove-duplicates-from-sorted-list/',topic:'Linked List',diff:'easy',src:'S'},
+{name:'Rotate List',url:'https://leetcode.com/problems/rotate-list/',topic:'Linked List',diff:'medium',src:'S'},
+{name:'Flatten Multilevel Doubly LL',url:'https://leetcode.com/problems/flatten-a-multilevel-doubly-linked-list/',topic:'Linked List',diff:'medium',src:''},
+{name:'Remove Linked List Elements',url:'https://leetcode.com/problems/remove-linked-list-elements/',topic:'Linked List',diff:'easy',src:'S'},
+{name:'Reverse Linked List II',url:'https://leetcode.com/problems/reverse-linked-list-ii/',topic:'Linked List',diff:'medium',src:'S'},
+{name:'Odd Even Linked List',url:'https://leetcode.com/problems/odd-even-linked-list/',topic:'Linked List',diff:'medium',src:'S'},
+{name:'Invert Binary Tree',url:'https://leetcode.com/problems/invert-binary-tree/',topic:'Trees',diff:'easy',src:'TNGS'},
+{name:'Maximum Depth of Binary Tree',url:'https://leetcode.com/problems/maximum-depth-of-binary-tree/',topic:'Trees',diff:'easy',src:'TNGS'},
+{name:'Diameter of Binary Tree',url:'https://leetcode.com/problems/diameter-of-binary-tree/',topic:'Trees',diff:'easy',src:'TNGS'},
+{name:'Balanced Binary Tree',url:'https://leetcode.com/problems/balanced-binary-tree/',topic:'Trees',diff:'easy',src:'NG'},
+{name:'Same Tree',url:'https://leetcode.com/problems/same-tree/',topic:'Trees',diff:'easy',src:'NS'},
+{name:'Subtree of Another Tree',url:'https://leetcode.com/problems/subtree-of-another-tree/',topic:'Trees',diff:'easy',src:'NS'},
+{name:'LCA of BST',url:'https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/',topic:'Trees',diff:'medium',src:'TNGS'},
+{name:'Binary Tree Level Order Traversal',url:'https://leetcode.com/problems/binary-tree-level-order-traversal/',topic:'Trees',diff:'medium',src:'TNGS'},
+{name:'Binary Tree Right Side View',url:'https://leetcode.com/problems/binary-tree-right-side-view/',topic:'Trees',diff:'medium',src:'TNGS'},
+{name:'Count Good Nodes',url:'https://leetcode.com/problems/count-good-nodes-in-binary-tree/',topic:'Trees',diff:'medium',src:'N'},
+{name:'Validate BST',url:'https://leetcode.com/problems/validate-binary-search-tree/',topic:'Trees',diff:'medium',src:'TNGS'},
+{name:'Kth Smallest in BST',url:'https://leetcode.com/problems/kth-smallest-element-in-a-bst/',topic:'Trees',diff:'medium',src:'NGS'},
+{name:'Construct BT from Preorder/Inorder',url:'https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/',topic:'Trees',diff:'medium',src:'TNGS'},
+{name:'Binary Tree Max Path Sum',url:'https://leetcode.com/problems/binary-tree-maximum-path-sum/',topic:'Trees',diff:'hard',src:'TNS'},
+{name:'Serialize/Deserialize BT',url:'https://leetcode.com/problems/serialize-and-deserialize-binary-tree/',topic:'Trees',diff:'hard',src:'TNS'},
+{name:'LCA of Binary Tree',url:'https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/',topic:'Trees',diff:'medium',src:'TGS'},
+{name:'BT Zigzag Level Order',url:'https://leetcode.com/problems/binary-tree-zigzag-level-order-traversal/',topic:'Trees',diff:'medium',src:'S'},
+{name:'Path Sum II',url:'https://leetcode.com/problems/path-sum-ii/',topic:'Trees',diff:'medium',src:'TS'},
+{name:'Path Sum III',url:'https://leetcode.com/problems/path-sum-iii/',topic:'Trees',diff:'medium',src:'S'},
+{name:'Max Width of Binary Tree',url:'https://leetcode.com/problems/maximum-width-of-binary-tree/',topic:'Trees',diff:'medium',src:'TS'},
+{name:'Insert into BST',url:'https://leetcode.com/problems/insert-into-a-binary-search-tree/',topic:'Trees',diff:'medium',src:''},
+{name:'BST Iterator',url:'https://leetcode.com/problems/binary-search-tree-iterator/',topic:'Trees',diff:'medium',src:''},
+{name:'Symmetric Tree',url:'https://leetcode.com/problems/symmetric-tree/',topic:'Trees',diff:'easy',src:''},
+{name:'Sorted Array to BST',url:'https://leetcode.com/problems/convert-sorted-array-to-binary-search-tree/',topic:'Trees',diff:'easy',src:''},
+{name:'BT Inorder Traversal',url:'https://leetcode.com/problems/binary-tree-inorder-traversal/',topic:'Trees',diff:'easy',src:''},
+{name:'Delete Node in BST',url:'https://leetcode.com/problems/delete-node-in-a-bst/',topic:'Trees',diff:'medium',src:''},
+{name:'Sum Root to Leaf Numbers',url:'https://leetcode.com/problems/sum-root-to-leaf-numbers/',topic:'Trees',diff:'medium',src:''},
+{name:'Populating Next Right Pointers',url:'https://leetcode.com/problems/populating-next-right-pointers-in-each-node/',topic:'Trees',diff:'medium',src:''},
+{name:'Binary Tree Cameras',url:'https://leetcode.com/problems/binary-tree-cameras/',topic:'Trees',diff:'hard',src:''},
+{name:'Merge Two Binary Trees',url:'https://leetcode.com/problems/merge-two-binary-trees/',topic:'Trees',diff:'easy',src:'S'},
+{name:'Maximum Binary Tree',url:'https://leetcode.com/problems/maximum-binary-tree/',topic:'Trees',diff:'medium',src:'S'},
+{name:'All Nodes Distance K',url:'https://leetcode.com/problems/all-nodes-distance-k-in-binary-tree/',topic:'Trees',diff:'medium',src:'S'},
+{name:'BT Level Order II',url:'https://leetcode.com/problems/binary-tree-level-order-traversal-ii/',topic:'Trees',diff:'medium',src:'S'},
+{name:'Average of Levels',url:'https://leetcode.com/problems/average-of-levels-in-binary-tree/',topic:'Trees',diff:'easy',src:'S'},
+{name:'Path Sum',url:'https://leetcode.com/problems/path-sum/',topic:'Trees',diff:'easy',src:'S'},
+{name:'Minimum Depth of BT',url:'https://leetcode.com/problems/minimum-depth-of-binary-tree/',topic:'Trees',diff:'easy',src:'S'},
+{name:'Binary Tree Paths',url:'https://leetcode.com/problems/binary-tree-paths/',topic:'Trees',diff:'easy',src:'S'},
+{name:'Implement Trie',url:'https://leetcode.com/problems/implement-trie-prefix-tree/',topic:'Tries',diff:'medium',src:'TNGS'},
+{name:'Add and Search Words',url:'https://leetcode.com/problems/design-add-and-search-words-data-structure/',topic:'Tries',diff:'medium',src:'TNS'},
+{name:'Word Search II',url:'https://leetcode.com/problems/word-search-ii/',topic:'Tries',diff:'hard',src:'TNS'},
+{name:'Index Pairs of a String',url:'https://leetcode.com/problems/index-pairs-of-a-string/',topic:'Tries',diff:'easy',src:'S'},
+{name:'Design Autocomplete',url:'https://leetcode.com/problems/design-search-autocomplete-system/',topic:'Tries',diff:'hard',src:'S'},
+{name:'Word Squares',url:'https://leetcode.com/problems/word-squares/',topic:'Tries',diff:'hard',src:'S'},
+{name:'Longest Word in Dictionary',url:'https://leetcode.com/problems/longest-word-in-dictionary/',topic:'Tries',diff:'medium',src:'S'},
+{name:'Maximum XOR of Two Numbers',url:'https://leetcode.com/problems/maximum-xor-of-two-numbers-in-an-array/',topic:'Tries',diff:'medium',src:'S'},
+{name:'Concatenated Words',url:'https://leetcode.com/problems/concatenated-words/',topic:'Tries',diff:'hard',src:'S'},
+{name:'Prefix and Suffix Search',url:'https://leetcode.com/problems/prefix-and-suffix-search/',topic:'Tries',diff:'hard',src:'S'},
+{name:'Palindrome Pairs',url:'https://leetcode.com/problems/palindrome-pairs/',topic:'Tries',diff:'hard',src:'S'},
+{name:'Kth Largest in Stream',url:'https://leetcode.com/problems/kth-largest-element-in-a-stream/',topic:'Heap / Priority Queue',diff:'easy',src:'N'},
+{name:'Last Stone Weight',url:'https://leetcode.com/problems/last-stone-weight/',topic:'Heap / Priority Queue',diff:'easy',src:'TN'},
+{name:'K Closest Points to Origin',url:'https://leetcode.com/problems/k-closest-points-to-origin/',topic:'Heap / Priority Queue',diff:'medium',src:'TNGS'},
+{name:'Kth Largest in Array',url:'https://leetcode.com/problems/kth-largest-element-in-an-array/',topic:'Heap / Priority Queue',diff:'medium',src:'TNS'},
+{name:'Task Scheduler',url:'https://leetcode.com/problems/task-scheduler/',topic:'Heap / Priority Queue',diff:'medium',src:'TNGS'},
+{name:'Design Twitter',url:'https://leetcode.com/problems/design-twitter/',topic:'Heap / Priority Queue',diff:'medium',src:'N'},
+{name:'Find Median from Data Stream',url:'https://leetcode.com/problems/find-median-from-data-stream/',topic:'Heap / Priority Queue',diff:'hard',src:'TNS'},
+{name:'Top K Frequent Words',url:'https://leetcode.com/problems/top-k-frequent-words/',topic:'Heap / Priority Queue',diff:'medium',src:''},
+{name:'IPO',url:'https://leetcode.com/problems/ipo/',topic:'Heap / Priority Queue',diff:'hard',src:''},
+{name:'Kth Smallest in Sorted Matrix',url:'https://leetcode.com/problems/kth-smallest-element-in-a-sorted-matrix/',topic:'Heap / Priority Queue',diff:'medium',src:'S'},
+{name:'Smallest Range from K Lists',url:'https://leetcode.com/problems/smallest-range-covering-elements-from-k-lists/',topic:'Heap / Priority Queue',diff:'hard',src:'TS'},
+{name:'Find K Pairs Smallest Sums',url:'https://leetcode.com/problems/find-k-pairs-with-smallest-sums/',topic:'Heap / Priority Queue',diff:'medium',src:'S'},
+{name:'Rearrange String k Distance',url:'https://leetcode.com/problems/rearrange-string-k-distance-apart/',topic:'Heap / Priority Queue',diff:'hard',src:'S'},
+{name:'Course Schedule III',url:'https://leetcode.com/problems/course-schedule-iii/',topic:'Heap / Priority Queue',diff:'hard',src:'S'},
+{name:'Maximum Frequency Stack',url:'https://leetcode.com/problems/maximum-frequency-stack/',topic:'Heap / Priority Queue',diff:'hard',src:'S'},
+{name:'Sort Characters By Frequency',url:'https://leetcode.com/problems/sort-characters-by-frequency/',topic:'Heap / Priority Queue',diff:'medium',src:'S'},
+{name:'Reorganize String',url:'https://leetcode.com/problems/reorganize-string/',topic:'Heap / Priority Queue',diff:'medium',src:'S'},
+{name:'Employee Free Time',url:'https://leetcode.com/problems/employee-free-time/',topic:'Heap / Priority Queue',diff:'hard',src:'S'},
+{name:'Subsets',url:'https://leetcode.com/problems/subsets/',topic:'Backtracking',diff:'medium',src:'TNGS'},
+{name:'Combination Sum',url:'https://leetcode.com/problems/combination-sum/',topic:'Backtracking',diff:'medium',src:'TNGS'},
+{name:'Permutations',url:'https://leetcode.com/problems/permutations/',topic:'Backtracking',diff:'medium',src:'TNGS'},
+{name:'Subsets II',url:'https://leetcode.com/problems/subsets-ii/',topic:'Backtracking',diff:'medium',src:'TNS'},
+{name:'Combination Sum II',url:'https://leetcode.com/problems/combination-sum-ii/',topic:'Backtracking',diff:'medium',src:'NS'},
+{name:'Word Search',url:'https://leetcode.com/problems/word-search/',topic:'Backtracking',diff:'medium',src:'TNGS'},
+{name:'Palindrome Partitioning',url:'https://leetcode.com/problems/palindrome-partitioning/',topic:'Backtracking',diff:'medium',src:'TNS'},
+{name:'Letter Combinations',url:'https://leetcode.com/problems/letter-combinations-of-a-phone-number/',topic:'Backtracking',diff:'medium',src:'TNGS'},
+{name:'N-Queens',url:'https://leetcode.com/problems/n-queens/',topic:'Backtracking',diff:'hard',src:'TNS'},
+{name:'Combination Sum IV',url:'https://leetcode.com/problems/combination-sum-iv/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Letter Case Permutation',url:'https://leetcode.com/problems/letter-case-permutation/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Permutations II',url:'https://leetcode.com/problems/permutations-ii/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Combinations',url:'https://leetcode.com/problems/combinations/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Combination Sum III',url:'https://leetcode.com/problems/combination-sum-iii/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Sudoku Solver',url:'https://leetcode.com/problems/sudoku-solver/',topic:'Backtracking',diff:'hard',src:'S'},
+{name:'Partition to K Equal Sum',url:'https://leetcode.com/problems/partition-to-k-equal-sum-subsets/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Generalized Abbreviation',url:'https://leetcode.com/problems/generalized-abbreviation/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Factor Combinations',url:'https://leetcode.com/problems/factor-combinations/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Max Unique Substrings',url:'https://leetcode.com/problems/split-a-string-into-the-max-number-of-unique-substrings/',topic:'Backtracking',diff:'medium',src:'S'},
+{name:'Number of Islands',url:'https://leetcode.com/problems/number-of-islands/',topic:'Graphs',diff:'medium',src:'TNGS'},
+{name:'Clone Graph',url:'https://leetcode.com/problems/clone-graph/',topic:'Graphs',diff:'medium',src:'TNGS'},
+{name:'Max Area of Island',url:'https://leetcode.com/problems/max-area-of-island/',topic:'Graphs',diff:'medium',src:'N'},
+{name:'Pacific Atlantic Water Flow',url:'https://leetcode.com/problems/pacific-atlantic-water-flow/',topic:'Graphs',diff:'medium',src:'TNS'},
+{name:'Surrounded Regions',url:'https://leetcode.com/problems/surrounded-regions/',topic:'Graphs',diff:'medium',src:'N'},
+{name:'Rotting Oranges',url:'https://leetcode.com/problems/rotting-oranges/',topic:'Graphs',diff:'medium',src:'TNGS'},
+{name:'Walls and Gates',url:'https://leetcode.com/problems/walls-and-gates/',topic:'Graphs',diff:'medium',src:'N'},
+{name:'Course Schedule',url:'https://leetcode.com/problems/course-schedule/',topic:'Graphs',diff:'medium',src:'TNGS'},
+{name:'Course Schedule II',url:'https://leetcode.com/problems/course-schedule-ii/',topic:'Graphs',diff:'medium',src:'TNS'},
+{name:'Redundant Connection',url:'https://leetcode.com/problems/redundant-connection/',topic:'Graphs',diff:'medium',src:'TN'},
+{name:'Connected Components',url:'https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/',topic:'Graphs',diff:'medium',src:'NS'},
+{name:'Graph Valid Tree',url:'https://leetcode.com/problems/graph-valid-tree/',topic:'Graphs',diff:'medium',src:'TNS'},
+{name:'Word Ladder',url:'https://leetcode.com/problems/word-ladder/',topic:'Graphs',diff:'hard',src:'TN'},
+{name:'Flood Fill',url:'https://leetcode.com/problems/flood-fill/',topic:'Graphs',diff:'easy',src:'G'},
+{name:'01 Matrix',url:'https://leetcode.com/problems/01-matrix/',topic:'Graphs',diff:'medium',src:'G'},
+{name:'Accounts Merge',url:'https://leetcode.com/problems/accounts-merge/',topic:'Graphs',diff:'medium',src:'G'},
+{name:'Minimum Height Trees',url:'https://leetcode.com/problems/minimum-height-trees/',topic:'Graphs',diff:'medium',src:'GS'},
+{name:'Reconstruct Itinerary',url:'https://leetcode.com/problems/reconstruct-itinerary/',topic:'Graphs',diff:'hard',src:'N'},
+{name:'Min Cost Connect Points',url:'https://leetcode.com/problems/min-cost-to-connect-all-points/',topic:'Graphs',diff:'medium',src:'N'},
+{name:'Network Delay Time',url:'https://leetcode.com/problems/network-delay-time/',topic:'Graphs',diff:'medium',src:'TN'},
+{name:'Swim in Rising Water',url:'https://leetcode.com/problems/swim-in-rising-water/',topic:'Graphs',diff:'hard',src:'TN'},
+{name:'Alien Dictionary',url:'https://leetcode.com/problems/alien-dictionary/',topic:'Graphs',diff:'hard',src:'TNS'},
+{name:'Cheapest Flights K Stops',url:'https://leetcode.com/problems/cheapest-flights-within-k-stops/',topic:'Graphs',diff:'medium',src:'TN'},
+{name:'Is Graph Bipartite?',url:'https://leetcode.com/problems/is-graph-bipartite/',topic:'Graphs',diff:'medium',src:''},
+{name:'All Paths Source to Target',url:'https://leetcode.com/problems/all-paths-from-source-to-target/',topic:'Graphs',diff:'medium',src:''},
+{name:'Shortest Path Binary Matrix',url:'https://leetcode.com/problems/shortest-path-in-binary-matrix/',topic:'Graphs',diff:'medium',src:''},
+{name:'Find if Path Exists',url:'https://leetcode.com/problems/find-if-path-exists-in-graph/',topic:'Graphs',diff:'easy',src:''},
+{name:'Evaluate Division',url:'https://leetcode.com/problems/evaluate-division/',topic:'Graphs',diff:'medium',src:''},
+{name:'Snakes and Ladders',url:'https://leetcode.com/problems/snakes-and-ladders/',topic:'Graphs',diff:'medium',src:''},
+{name:'Minimum Knight Moves',url:'https://leetcode.com/problems/minimum-knight-moves/',topic:'Graphs',diff:'medium',src:''},
+{name:'Sequence Reconstruction',url:'https://leetcode.com/problems/sequence-reconstruction/',topic:'Graphs',diff:'medium',src:'S'},
+{name:'Sort Items by Groups',url:'https://leetcode.com/problems/sort-items-by-groups-respecting-dependencies/',topic:'Graphs',diff:'hard',src:'S'},
+{name:'Buy Sell Stock II',url:'https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Buy Sell Stock III',url:'https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/',topic:'Dynamic Programming',diff:'hard',src:''},
+{name:'Buy Sell Stock IV',url:'https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/',topic:'Dynamic Programming',diff:'hard',src:''},
+{name:'Buy Sell Stock with Fee',url:'https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Climbing Stairs',url:'https://leetcode.com/problems/climbing-stairs/',topic:'Dynamic Programming',diff:'easy',src:'TNGS'},
+{name:'Min Cost Climbing Stairs',url:'https://leetcode.com/problems/min-cost-climbing-stairs/',topic:'Dynamic Programming',diff:'easy',src:'N'},
+{name:'House Robber',url:'https://leetcode.com/problems/house-robber/',topic:'Dynamic Programming',diff:'medium',src:'TNGS'},
+{name:'House Robber II',url:'https://leetcode.com/problems/house-robber-ii/',topic:'Dynamic Programming',diff:'medium',src:'TNS'},
+{name:'Longest Palindromic Substring',url:'https://leetcode.com/problems/longest-palindromic-substring/',topic:'Dynamic Programming',diff:'medium',src:'TNGS'},
+{name:'Palindromic Substrings',url:'https://leetcode.com/problems/palindromic-substrings/',topic:'Dynamic Programming',diff:'medium',src:'NS'},
+{name:'Decode Ways',url:'https://leetcode.com/problems/decode-ways/',topic:'Dynamic Programming',diff:'medium',src:'TNS'},
+{name:'Coin Change',url:'https://leetcode.com/problems/coin-change/',topic:'Dynamic Programming',diff:'medium',src:'TNGS'},
+{name:'Maximum Product Subarray',url:'https://leetcode.com/problems/maximum-product-subarray/',topic:'Dynamic Programming',diff:'medium',src:'TNS'},
+{name:'Word Break',url:'https://leetcode.com/problems/word-break/',topic:'Dynamic Programming',diff:'medium',src:'TNGS'},
+{name:'Longest Increasing Subsequence',url:'https://leetcode.com/problems/longest-increasing-subsequence/',topic:'Dynamic Programming',diff:'medium',src:'TNGS'},
+{name:'Partition Equal Subset Sum',url:'https://leetcode.com/problems/partition-equal-subset-sum/',topic:'Dynamic Programming',diff:'medium',src:'TNGS'},
+{name:'Longest Palindrome',url:'https://leetcode.com/problems/longest-palindrome/',topic:'Dynamic Programming',diff:'easy',src:'G'},
+{name:'Maximum Subarray',url:'https://leetcode.com/problems/maximum-subarray/',topic:'Dynamic Programming',diff:'medium',src:'TNGS'},
+{name:'Perfect Squares',url:'https://leetcode.com/problems/perfect-squares/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Unique Paths',url:'https://leetcode.com/problems/unique-paths/',topic:'Dynamic Programming',diff:'medium',src:'TNGS'},
+{name:'Unique Paths II',url:'https://leetcode.com/problems/unique-paths-ii/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Longest Common Subsequence',url:'https://leetcode.com/problems/longest-common-subsequence/',topic:'Dynamic Programming',diff:'medium',src:'TNS'},
+{name:'Buy Sell Stock Cooldown',url:'https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/',topic:'Dynamic Programming',diff:'medium',src:'NS'},
+{name:'Coin Change II',url:'https://leetcode.com/problems/coin-change-ii/',topic:'Dynamic Programming',diff:'medium',src:'TN'},
+{name:'Target Sum',url:'https://leetcode.com/problems/target-sum/',topic:'Dynamic Programming',diff:'medium',src:'TNS'},
+{name:'Interleaving String',url:'https://leetcode.com/problems/interleaving-string/',topic:'Dynamic Programming',diff:'medium',src:'N'},
+{name:'Longest Increasing Path',url:'https://leetcode.com/problems/longest-increasing-path-in-a-matrix/',topic:'Dynamic Programming',diff:'hard',src:'N'},
+{name:'Distinct Subsequences',url:'https://leetcode.com/problems/distinct-subsequences/',topic:'Dynamic Programming',diff:'hard',src:'N'},
+{name:'Edit Distance',url:'https://leetcode.com/problems/edit-distance/',topic:'Dynamic Programming',diff:'medium',src:'TN'},
+{name:'Burst Balloons',url:'https://leetcode.com/problems/burst-balloons/',topic:'Dynamic Programming',diff:'hard',src:'TN'},
+{name:'Regular Expression Matching',url:'https://leetcode.com/problems/regular-expression-matching/',topic:'Dynamic Programming',diff:'hard',src:'TN'},
+{name:'Minimum Path Sum',url:'https://leetcode.com/problems/minimum-path-sum/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Maximal Square',url:'https://leetcode.com/problems/maximal-square/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Delete and Earn',url:'https://leetcode.com/problems/delete-and-earn/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Number of Longest Increasing Subseq',url:'https://leetcode.com/problems/number-of-longest-increasing-subsequence/',topic:'Dynamic Programming',diff:'medium',src:'S'},
+{name:'Arithmetic Slices',url:'https://leetcode.com/problems/arithmetic-slices/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Ones and Zeroes',url:'https://leetcode.com/problems/ones-and-zeroes/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Wildcard Matching',url:'https://leetcode.com/problems/wildcard-matching/',topic:'Dynamic Programming',diff:'hard',src:''},
+{name:'Stone Game',url:'https://leetcode.com/problems/stone-game/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Dungeon Game',url:'https://leetcode.com/problems/dungeon-game/',topic:'Dynamic Programming',diff:'hard',src:''},
+{name:'Ugly Number II',url:'https://leetcode.com/problems/ugly-number-ii/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Max Length Pair Chain',url:'https://leetcode.com/problems/maximum-length-of-pair-chain/',topic:'Dynamic Programming',diff:'medium',src:''},
+{name:'Max Profit Job Scheduling',url:'https://leetcode.com/problems/maximum-profit-in-job-scheduling/',topic:'Dynamic Programming',diff:'hard',src:''},
+{name:'Word Break II',url:'https://leetcode.com/problems/word-break-ii/',topic:'Dynamic Programming',diff:'hard',src:''},
+{name:'Longest Palindromic Subsequence',url:'https://leetcode.com/problems/longest-palindromic-subsequence/',topic:'Dynamic Programming',diff:'medium',src:'T'},
+{name:'Jump Game',url:'https://leetcode.com/problems/jump-game/',topic:'Greedy',diff:'medium',src:'TNGS'},
+{name:'Jump Game II',url:'https://leetcode.com/problems/jump-game-ii/',topic:'Greedy',diff:'medium',src:'TN'},
+{name:'Gas Station',url:'https://leetcode.com/problems/gas-station/',topic:'Greedy',diff:'medium',src:'TNGS'},
+{name:'Hand of Straights',url:'https://leetcode.com/problems/hand-of-straights/',topic:'Greedy',diff:'medium',src:'N'},
+{name:'Merge Triplets',url:'https://leetcode.com/problems/merge-triplets-to-form-target-triplet/',topic:'Greedy',diff:'medium',src:'N'},
+{name:'Partition Labels',url:'https://leetcode.com/problems/partition-labels/',topic:'Greedy',diff:'medium',src:'TN'},
+{name:'Valid Parenthesis String',url:'https://leetcode.com/problems/valid-parenthesis-string/',topic:'Greedy',diff:'medium',src:'N'},
+{name:'Queue Reconstruction by Height',url:'https://leetcode.com/problems/queue-reconstruction-by-height/',topic:'Greedy',diff:'medium',src:''},
+{name:'Min Arrows to Burst Balloons',url:'https://leetcode.com/problems/minimum-number-of-arrows-to-burst-balloons/',topic:'Greedy',diff:'medium',src:'S'},
+{name:'Max Length Pair Chain',url:'https://leetcode.com/problems/maximum-length-of-pair-chain/',topic:'Greedy',diff:'medium',src:''},
+{name:'Insert Interval',url:'https://leetcode.com/problems/insert-interval/',topic:'Intervals',diff:'medium',src:'TNGS'},
+{name:'Merge Intervals',url:'https://leetcode.com/problems/merge-intervals/',topic:'Intervals',diff:'medium',src:'TNGS'},
+{name:'Non-overlapping Intervals',url:'https://leetcode.com/problems/non-overlapping-intervals/',topic:'Intervals',diff:'medium',src:'TNS'},
+{name:'Meeting Rooms',url:'https://leetcode.com/problems/meeting-rooms/',topic:'Intervals',diff:'easy',src:'TNS'},
+{name:'Meeting Rooms II',url:'https://leetcode.com/problems/meeting-rooms-ii/',topic:'Intervals',diff:'medium',src:'TNS'},
+{name:'Min Interval to Include Each Query',url:'https://leetcode.com/problems/minimum-interval-to-include-each-query/',topic:'Intervals',diff:'hard',src:'N'},
+{name:'Interval List Intersections',url:'https://leetcode.com/problems/interval-list-intersections/',topic:'Intervals',diff:'medium',src:'TS'},
+{name:'Rotate Image',url:'https://leetcode.com/problems/rotate-image/',topic:'Math & Geometry',diff:'medium',src:'TNGS'},
+{name:'Spiral Matrix',url:'https://leetcode.com/problems/spiral-matrix/',topic:'Math & Geometry',diff:'medium',src:'TNGS'},
+{name:'Spiral Matrix II',url:'https://leetcode.com/problems/spiral-matrix-ii/',topic:'Math & Geometry',diff:'medium',src:''},
+{name:'Set Matrix Zeroes',url:'https://leetcode.com/problems/set-matrix-zeroes/',topic:'Math & Geometry',diff:'medium',src:'TNS'},
+{name:'Happy Number',url:'https://leetcode.com/problems/happy-number/',topic:'Math & Geometry',diff:'easy',src:'N'},
+{name:'Plus One',url:'https://leetcode.com/problems/plus-one/',topic:'Math & Geometry',diff:'easy',src:'N'},
+{name:'Pow(x, n)',url:'https://leetcode.com/problems/powx-n/',topic:'Math & Geometry',diff:'medium',src:'N'},
+{name:'Multiply Strings',url:'https://leetcode.com/problems/multiply-strings/',topic:'Math & Geometry',diff:'medium',src:'N'},
+{name:'Detect Squares',url:'https://leetcode.com/problems/detect-squares/',topic:'Math & Geometry',diff:'medium',src:'N'},
+{name:'Add Binary',url:'https://leetcode.com/problems/add-binary/',topic:'Math & Geometry',diff:'easy',src:'G'},
+{name:'Random Pick with Weight',url:'https://leetcode.com/problems/random-pick-with-weight/',topic:'Math & Geometry',diff:'medium',src:''},
+{name:'String to Integer (atoi)',url:'https://leetcode.com/problems/string-to-integer-atoi/',topic:'Math & Geometry',diff:'medium',src:'G'},
+{name:'Roman to Integer',url:'https://leetcode.com/problems/roman-to-integer/',topic:'Math & Geometry',diff:'easy',src:''},
+{name:'Palindrome Number',url:'https://leetcode.com/problems/palindrome-number/',topic:'Math & Geometry',diff:'easy',src:''},
+{name:'Single Number',url:'https://leetcode.com/problems/single-number/',topic:'Bit Manipulation',diff:'easy',src:'NS'},
+{name:'Number of 1 Bits',url:'https://leetcode.com/problems/number-of-1-bits/',topic:'Bit Manipulation',diff:'easy',src:'TNS'},
+{name:'Counting Bits',url:'https://leetcode.com/problems/counting-bits/',topic:'Bit Manipulation',diff:'easy',src:'NS'},
+{name:'Reverse Bits',url:'https://leetcode.com/problems/reverse-bits/',topic:'Bit Manipulation',diff:'easy',src:'N'},
+{name:'Missing Number',url:'https://leetcode.com/problems/missing-number/',topic:'Bit Manipulation',diff:'easy',src:'TNS'},
+{name:'Sum of Two Integers',url:'https://leetcode.com/problems/sum-of-two-integers/',topic:'Bit Manipulation',diff:'medium',src:'TNS'},
+{name:'Reverse Integer',url:'https://leetcode.com/problems/reverse-integer/',topic:'Bit Manipulation',diff:'medium',src:'N'},
+{name:'Single Number II',url:'https://leetcode.com/problems/single-number-ii/',topic:'Bit Manipulation',diff:'medium',src:''},
+{name:'Power of Two',url:'https://leetcode.com/problems/power-of-two/',topic:'Bit Manipulation',diff:'easy',src:''}
+];
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+function seed(){if(problems.length>0)return;problems=DB_SEED.map((p,i)=>({id:i+1,attemptNo:0,nextReview:null,lastAttempt:null,mistake:'unsolved',ref:'',...p}));save();}
+initTheme();load();seed();renderTracker();initSkillTreeCanvas();
+</script>
+</body>
+</html>

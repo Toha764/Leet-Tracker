@@ -64,9 +64,6 @@
   --hm-0: #ebedf0; --hm-1: #9be9a8; --hm-2: #40c463; --hm-3: #30a14e; --hm-4: #216e39;
   --tier-locked: #9ca3af; --tier-learning: #3b82f6; --tier-proficient: #22c55e; --tier-mastered: #f59e0b;
 }
-[data-theme="light"] .diff-easy { color: #059669; background: rgba(5,150,105,0.1); border-color: rgba(5,150,105,0.25); }
-[data-theme="light"] .diff-medium { color: #d97706; background: rgba(217,119,6,0.1); border-color: rgba(217,119,6,0.25); }
-[data-theme="light"] .diff-hard { color: #dc2626; background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.25); }
 [data-theme="light"] .modal-overlay { background: var(--modal-overlay); backdrop-filter: blur(6px); }
 [data-theme="light"] .modal { box-shadow: 0 24px 64px rgba(0,0,0,0.15); }
 
@@ -127,16 +124,25 @@ body { padding: 0 20px 60px; max-width: 1100px; margin: 0 auto; }
 .diff-easy { color:#34d399; background:rgba(52,211,153,0.12); border-color:rgba(52,211,153,0.3); }
 .diff-medium { color:#f59e0b; background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.3); }
 .diff-hard { color:#ef4444; background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.3); }
-.mistake-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; border:1px solid; }
-.m-none { background:var(--green-bg); color:var(--green); border-color:rgba(74,222,128,0.2); }
-.m-conceptual { background:var(--red-bg); color:var(--red); border-color:rgba(248,113,113,0.2); }
-.m-implementation { background:var(--orange-bg); color:var(--orange); border-color:rgba(251,191,36,0.2); }
-.m-edge_case { background:var(--blue-bg); color:var(--blue); border-color:rgba(96,165,250,0.2); }
-.m-complexity { background:rgba(182,158,255,0.1); color:#b69eff; border-color:rgba(182,158,255,0.2); }
-.m-reading { background:rgba(255,209,102,0.1); color:#ffd166; border-color:rgba(255,209,102,0.2); }
+[data-theme="light"] .diff-easy { color:#059669; background:rgba(5,150,105,0.1); border-color:rgba(5,150,105,0.25); }
+[data-theme="light"] .diff-medium { color:#d97706; background:rgba(217,119,6,0.1); border-color:rgba(217,119,6,0.25); }
+[data-theme="light"] .diff-hard { color:#dc2626; background:rgba(220,38,38,0.1); border-color:rgba(220,38,38,0.25); }
+/* Diagnostic & Next column badges — same pill style as diff-badge */
+.mistake-badge { display:inline-block; padding:4px 12px; border-radius:100px; font-size:11px; font-weight:600; font-family:var(--font-sans); letter-spacing:0.04em; border:1px solid; }
+.m-none { background:rgba(74,222,128,0.12); color:#4ade80; border-color:rgba(74,222,128,0.3); }
+.m-conceptual { background:rgba(248,113,113,0.12); color:#f87171; border-color:rgba(248,113,113,0.3); }
+.m-implementation { background:rgba(251,191,36,0.12); color:#fbbf24; border-color:rgba(251,191,36,0.3); }
+.m-edge_case { background:rgba(96,165,250,0.12); color:#60a5fa; border-color:rgba(96,165,250,0.3); }
+.m-complexity { background:rgba(182,158,255,0.12); color:#b69eff; border-color:rgba(182,158,255,0.3); }
+.m-reading { background:rgba(255,209,102,0.12); color:#ffd166; border-color:rgba(255,209,102,0.3); }
 .m-unsolved { background:transparent; color:var(--text-muted); border-color:var(--border); }
-.due-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; font-family:var(--font-mono); background:var(--red-bg); color:var(--red); border:1px solid rgba(248,113,113,0.2); }
-.future-date { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+[data-theme="light"] .m-none { color:#16a34a; background:rgba(22,163,74,0.1); border-color:rgba(22,163,74,0.3); }
+[data-theme="light"] .m-conceptual { color:#dc2626; background:rgba(220,38,38,0.1); border-color:rgba(220,38,38,0.3); }
+[data-theme="light"] .m-implementation { color:#d97706; background:rgba(217,119,6,0.1); border-color:rgba(217,119,6,0.3); }
+[data-theme="light"] .m-edge_case { color:#2563eb; background:rgba(37,99,235,0.1); border-color:rgba(37,99,235,0.3); }
+/* Next column pill badges */
+.due-badge { display:inline-block; padding:4px 12px; border-radius:100px; font-size:11px; font-weight:600; font-family:var(--font-sans); letter-spacing:0.04em; background:rgba(248,113,113,0.12); color:#f87171; border:1px solid rgba(248,113,113,0.3); }
+.future-date { display:inline-block; padding:4px 12px; border-radius:100px; font-size:11px; font-weight:500; font-family:var(--font-sans); color:var(--text-muted); border:1px solid var(--border); background:transparent; }
 .attempt-count { font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text-main); }
 .src-badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:600; font-family:var(--font-mono); margin-right:4px; background:var(--bg-hover); color:var(--text-muted); border:1px solid var(--border); }
 
@@ -235,7 +241,7 @@ body { padding: 0 20px 60px; max-width: 1100px; margin: 0 auto; }
 
 /* ── Utilities ── */
 a.prob-link { color:var(--text-main); text-decoration:none; font-weight:500; }
-.accepted-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; font-family:var(--font-mono); background:rgba(74,222,128,0.08); color:var(--green); border:1px solid rgba(74,222,128,0.2); }
+.accepted-badge { display:inline-block; padding:4px 12px; border-radius:100px; font-size:11px; font-weight:600; font-family:var(--font-sans); letter-spacing:0.04em; background:rgba(74,222,128,0.12); color:#4ade80; border:1px solid rgba(74,222,128,0.3); }
 .collapse-toggle { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:2px 6px; margin-left:8px; transition:transform 0.2s, color 0.2s; line-height:1; border-radius:4px; }
 .collapse-toggle:hover { color:var(--text-main); background:var(--border); }
 .collapse-toggle.collapsed { transform: rotate(-90deg); }
@@ -316,7 +322,7 @@ a.prob-link:hover { text-decoration:underline; }
   </div>
   <div class="landio-card">
     <h4 style="font-size:14px;font-weight:500;margin-bottom:24px;color:var(--text-muted);">Clean Solve Distribution by Topic</h4>
-    <div style="position:relative;width:100%;height:300px;"><canvas id="topicChart"></canvas></div>
+    <div style="position:relative;width:100%;height:340px;"><canvas id="topicChart"></canvas></div>
   </div>
 </div>
 
@@ -422,8 +428,7 @@ a.prob-link:hover { text-decoration:underline; }
     </div>
     <div class="form-group"><label>Manual Attempt Count</label><input id="f-attempt" type="number" min="0" placeholder="e.g. 0"></div>
     <div class="form-group"><label>Reflection Log</label>
-      <textarea id="f-ref" placeholder="
-1. Exploring various solutions - good
+      <textarea id="f-ref" placeholder="1. Exploring various solutions - good
 2. Didn't discuss time and space complexity.
    Next Time: Discuss complexity before writing code next time.
 3. Translating ideas into code - wrote buggy code initially.
@@ -603,7 +608,7 @@ let collapsedSections=new Set();
 function collapseAll(){TOPICS.forEach(t=>collapsedSections.add(t.label));renderTracker();}
 function expandAll(){collapsedSections.clear();renderTracker();}
 function toggleSection(label){if(collapsedSections.has(label))collapsedSections.delete(label);else collapsedSections.add(label);renderTracker();}
-function setFilter(f){activeFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));renderTracker();}
+function setFilter(f,el){activeFilter=f;document.querySelectorAll('.filter-btn[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));renderTracker();}
 function applyFilters(){searchTerm=document.getElementById('search-input').value.toLowerCase();renderTracker();}
 function filterProblems(list){
   return list.filter(p=>{
@@ -611,7 +616,8 @@ function filterProblems(list){
     if(activeFilter==='unsolved')return p.mistake==='unsolved'||!p.mistake;
     if(activeFilter==='clean')return p.mistake==='none';
     if(activeFilter==='friction')return p.mistake&&!['none','unsolved'].includes(p.mistake);
-    if(activeFilter==='due')return isDue(p.nextReview);
+    // Clean-solve problems are never due (nextReview cleared), guard explicitly
+    if(activeFilter==='due')return p.mistake!=='none'&&isDue(p.nextReview);
     return true;
   });
 }
@@ -659,7 +665,8 @@ function renderSrcBadges(s){if(!s)return'';return s.split('').filter(c=>'NTGS'.i
 
 function renderTracker(){
   const container=document.getElementById('tracker-sections');container.innerHTML='';
-  const dueTotal=problems.filter(p=>isDue(p.nextReview)).length;
+  // Exclude clean-solve problems from due count
+  const dueTotal=problems.filter(p=>p.mistake!=='none'&&isDue(p.nextReview)).length;
   const banner=document.getElementById('overdue-banner');
   if(dueTotal>0){banner.style.display='flex';document.getElementById('overdue-text').textContent=`${dueTotal} problem(s) require your attention today.`;}else{banner.style.display='none';}
   TOPICS.forEach(topic=>{
@@ -949,12 +956,12 @@ function renderDashboard(){
   const wb=document.getElementById('weakness-bars');
   if(friction===0)wb.innerHTML='<p style="font-size:13px;color:var(--text-muted)">Log friction points to generate diagnosis.</p>';
   else wb.innerHTML=Object.entries(weak).sort((a,b)=>b[1]-a[1]).map(([s,sc],i)=>`<div class="weakness-bar"><div class="weakness-bar-label"><span>${s}</span><span style="color:var(--text-muted)">${sc}</span></div><div class="weakness-bar-track"><div class="weakness-bar-fill" style="width:${Math.round(sc/maxS*100)}%;background:${bC[i]}"></div></div></div>`).join('');
-  // Chart — taller container + rotated labels to fix overlap
+  // Chart — fixed label overlap with rotation + adequate padding
   const dk=isDark();
   Chart.defaults.color=dk?'#9ca3af':'#6b7280';Chart.defaults.borderColor=dk?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';Chart.defaults.font.family="'Inter',sans-serif";
   const tc=TOPICS.map(t=>({label:t.short,count:problems.filter(p=>p.topic===t.label&&p.mistake==='none').length}));
   if(topicChart)topicChart.destroy();
-  topicChart=new Chart(document.getElementById('topicChart'),{type:'bar',data:{labels:tc.map(x=>x.label),datasets:[{data:tc.map(x=>x.count),backgroundColor:dk?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.06)',borderColor:dk?'#ffffff':'#111827',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45,minRotation:30}},y:{ticks:{stepSize:1}}}}});
+  topicChart=new Chart(document.getElementById('topicChart'),{type:'bar',data:{labels:tc.map(x=>x.label),datasets:[{data:tc.map(x=>x.count),backgroundColor:dk?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.06)',borderColor:dk?'rgba(255,255,255,0.5)':'rgba(0,0,0,0.4)',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{bottom:10}},plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10,family:"'JetBrains Mono',monospace"},maxRotation:45,minRotation:45,autoSkip:false,padding:4},border:{display:false}},y:{ticks:{stepSize:1,font:{size:11}},border:{display:false},grid:{color:dk?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.05)'}}}}});
 }
 
 // ═══════════════════════════════════════════

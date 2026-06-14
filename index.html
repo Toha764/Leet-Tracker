@@ -688,7 +688,7 @@ function renderTracker(){
       tProbs.forEach(p=>{
         const m=MISTAKES[p.mistake||'unsolved'];
         let dH;
-        if(p.mistake==='none'){dH=`<span class="accepted-badge">✓ Accepted</span>`;}
+        if(p.mistake==='none'){dH=`<span class="accepted-badge">✓ Done</span>`;}
         else if(p.nextReview){dH=isDue(p.nextReview)?`<span class="due-badge">⚠ DUE</span>`:`<span class="future-date">${fmtDate(p.nextReview)}</span>`;}
         else{dH='<span style="color:var(--text-muted)">—</span>';}
         tbody.innerHTML+=`<tr><td><a class="prob-link" href="${p.url||'#'}" target="_blank">${p.name}</a><br><div style="margin-top:6px">${renderSrcBadges(p.sources||'')}</div></td><td><span class="diff-badge diff-${p.diff||'medium'}">${(p.diff||'medium').charAt(0).toUpperCase()+(p.diff||'medium').slice(1)}</span></td><td><span class="mistake-badge ${m.cls}">${m.lbl}</span></td><td><span class="attempt-count">${p.attemptNo||0}</span></td><td>${dH}</td><td class="reflection-cell">${renderReflection(p.ref)}</td><td><div class="row-actions"><button class="row-btn" onclick="openModal('${topic.label}',${p.id})">✎</button><button class="row-btn del" onclick="deleteProblem(${p.id})">✕</button></div></td></tr>`;

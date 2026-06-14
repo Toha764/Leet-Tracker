@@ -188,8 +188,6 @@ body { padding: 0 20px 60px; max-width: 1100px; margin: 0 auto; }
 .skill-tree-container { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; position:relative; transition:background 0.3s; margin-bottom:24px; }
 .skill-tree-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0; }
 .skill-tree-title { font-size:14px; font-weight:500; color:var(--text-muted); }
-.xp-badge { display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--tier-mastered); }
-.xp-badge .xp-level { color:var(--text-muted); font-weight:500; }
 .skill-tree-canvas-wrap { position:relative; width:100%; height:440px; }
 #skillTreeCanvas { width:100%; height:100%; display:block; }
 #skill-tooltip { display:none; position:fixed; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:14px 18px; font-size:12px; pointer-events:none; z-index:200; min-width:190px; box-shadow:0 8px 24px var(--shadow-heavy); line-height:1.7; }
@@ -237,6 +235,11 @@ body { padding: 0 20px 60px; max-width: 1100px; margin: 0 auto; }
 
 /* ── Utilities ── */
 a.prob-link { color:var(--text-main); text-decoration:none; font-weight:500; }
+.accepted-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; font-family:var(--font-mono); background:rgba(74,222,128,0.08); color:var(--green); border:1px solid rgba(74,222,128,0.2); }
+.collapse-toggle { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:2px 6px; margin-left:8px; transition:transform 0.2s, color 0.2s; line-height:1; border-radius:4px; }
+.collapse-toggle:hover { color:var(--text-main); background:var(--border); }
+.collapse-toggle.collapsed { transform: rotate(-90deg); }
+.section-body { overflow:hidden; transition:max-height 0.3s ease; }
 a.prob-link:hover { text-decoration:underline; }
 .filter-bar { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; align-items:center; justify-content:center; }
 .filter-btn { padding:6px 16px; border-radius:100px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--text-muted); transition:all 0.2s; }
@@ -281,6 +284,8 @@ a.prob-link:hover { text-decoration:underline; }
     <button class="filter-btn" data-filter="unsolved" onclick="setFilter('unsolved',this)">Unsolved</button>
     <button class="filter-btn" data-filter="clean" onclick="setFilter('clean',this)">Clean</button>
     <button class="filter-btn" data-filter="friction" onclick="setFilter('friction',this)">Friction</button>
+    <button class="filter-btn" onclick="collapseAll()" style="margin-left:auto;">⊟ Collapse All</button>
+    <button class="filter-btn" onclick="expandAll()">⊞ Expand All</button>
   </div>
   <div id="tracker-sections"></div>
 </div>
@@ -290,7 +295,6 @@ a.prob-link:hover { text-decoration:underline; }
   <div class="skill-tree-container">
     <div class="skill-tree-header">
       <span class="skill-tree-title">Mastery Constellation</span>
-      <div class="xp-badge" id="total-xp-badge">⚡ <span id="total-xp-val">0</span> XP <span class="xp-level" id="total-level"></span></div>
     </div>
     <div class="skill-tree-canvas-wrap"><canvas id="skillTreeCanvas"></canvas></div>
     <div class="skill-tree-legend">
@@ -312,7 +316,7 @@ a.prob-link:hover { text-decoration:underline; }
   </div>
   <div class="landio-card">
     <h4 style="font-size:14px;font-weight:500;margin-bottom:24px;color:var(--text-muted);">Clean Solve Distribution by Topic</h4>
-    <div style="position:relative;width:100%;height:220px;"><canvas id="topicChart"></canvas></div>
+    <div style="position:relative;width:100%;height:300px;"><canvas id="topicChart"></canvas></div>
   </div>
 </div>
 
@@ -399,6 +403,7 @@ a.prob-link:hover { text-decoration:underline; }
       <div class="form-group"><label>Problem name</label><input id="f-name" type="text" placeholder="e.g. Two Sum"></div>
       <div class="form-group"><label>Topic</label><select id="f-topic"></select></div>
     </div>
+    <div class="form-group"><label>Problem URL <span style="font-size:10px;color:var(--text-dark);text-transform:none;letter-spacing:0">(optional)</span></label><input id="f-url" type="url" placeholder="https://leetcode.com/problems/..."></div>
     <div class="form-row">
       <div class="form-group"><label>Diagnostic Result</label>
         <select id="f-mistake">
@@ -594,6 +599,10 @@ function getTierColor(tier){
 // ═══════════════════════════════════════════
 //  FILTERING & SORTING
 // ═══════════════════════════════════════════
+let collapsedSections=new Set();
+function collapseAll(){TOPICS.forEach(t=>collapsedSections.add(t.label));renderTracker();}
+function expandAll(){collapsedSections.clear();renderTracker();}
+function toggleSection(label){if(collapsedSections.has(label))collapsedSections.delete(label);else collapsedSections.add(label);renderTracker();}
 function setFilter(f){activeFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));renderTracker();}
 function applyFilters(){searchTerm=document.getElementById('search-input').value.toLowerCase();renderTracker();}
 function filterProblems(list){
@@ -619,8 +628,8 @@ function sortArrow(col){if(sortCol!==col)return`<span class="sort-arrow">⇅</sp
 // ═══════════════════════════════════════════
 function openModal(topic,id){
   editingId=id||null;const t=document.getElementById('modal-title');
-  if(editingId){const p=problems.find(x=>x.id===editingId);t.textContent='Edit Reflection';document.getElementById('f-name').value=p.name||'';document.getElementById('f-topic').value=p.topic||'';document.getElementById('f-diff').value=p.diff||'medium';document.getElementById('f-mistake').value=p.mistake||'unsolved';document.getElementById('f-attempt').value=p.attemptNo||0;document.getElementById('f-ref').value=p.ref||'';}
-  else{t.textContent='Log Problem';document.getElementById('f-name').value='';document.getElementById('f-topic').value=topic||TOPICS[0].label;document.getElementById('f-diff').value='medium';document.getElementById('f-mistake').value='unsolved';document.getElementById('f-attempt').value=0;document.getElementById('f-ref').value=REF_TEMPLATE;}
+  if(editingId){const p=problems.find(x=>x.id===editingId);t.textContent='Edit Reflection';document.getElementById('f-name').value=p.name||'';document.getElementById('f-url').value=(p.url&&p.url!=='#')?p.url:'';document.getElementById('f-topic').value=p.topic||'';document.getElementById('f-diff').value=p.diff||'medium';document.getElementById('f-mistake').value=p.mistake||'unsolved';document.getElementById('f-attempt').value=p.attemptNo||0;document.getElementById('f-ref').value=p.ref||'';}
+  else{t.textContent='Log Problem';document.getElementById('f-name').value='';document.getElementById('f-url').value='';document.getElementById('f-topic').value=topic||TOPICS[0].label;document.getElementById('f-diff').value='medium';document.getElementById('f-mistake').value='unsolved';document.getElementById('f-attempt').value=0;document.getElementById('f-ref').value=REF_TEMPLATE;}
   document.getElementById('add-modal').classList.add('open');
 }
 function closeModal(){document.getElementById('add-modal').classList.remove('open');}
@@ -630,8 +639,11 @@ function submitProblem(){
   let ma=parseInt(document.getElementById('f-attempt').value,10);if(isNaN(ma)||ma<0)ma=0;
   let tp=editingId?problems.find(x=>x.id===editingId):null;
   if(!tp){tp={id:Date.now(),url:'#',sources:''};problems.push(tp);}
+  const urlVal=document.getElementById('f-url').value.trim();
+  tp.url=urlVal||'#';
   tp.name=name;tp.topic=document.getElementById('f-topic').value;tp.diff=document.getElementById('f-diff').value;tp.ref=document.getElementById('f-ref').value.trim();tp.lastAttempt=curDate;tp.attemptNo=ma;
-  if(mistake!=='unsolved'){if(mistake==='none'){let idx=ma-1;if(idx<0)idx=0;if(idx>=INTERVALS.length)idx=INTERVALS.length-1;tp.nextReview=addDays(curDate,INTERVALS[idx]);}else{tp.nextReview=addDays(curDate,1);}}else{tp.nextReview=null;}
+  if(mistake==='none'){tp.nextReview=null;}// Clean solve: no scheduled review needed
+  else if(mistake!=='unsolved'){tp.nextReview=addDays(curDate,1);}else{tp.nextReview=null;}
   tp.mistake=mistake;save();closeModal();renderTracker();
 }
 function deleteProblem(id){if(!confirm('Delete entry?'))return;problems=problems.filter(x=>x.id!==id);save();renderTracker();}
@@ -658,21 +670,33 @@ function renderTracker(){
     const attempted=tAll.filter(p=>p.mistake&&p.mistake!=='unsolved').length;
     const pct=tAll.length>0?Math.round(attempted/tAll.length*100):0;
     const pColor=pct>=70?'var(--green)':pct>=30?'var(--orange)':'var(--text-dark)';
-    const xp=calculateTopicXP(topic.label),lv=getTopicLevel(xp);
+    const isCollapsed=collapsedSections.has(topic.label);
     const sec=document.createElement('div');sec.className='landio-card';sec.style.padding='0';sec.style.overflow='hidden';
-    sec.innerHTML=`<div class="section-header"><span>${topic.label}</span><span style="margin-left:auto;font-size:11px;color:var(--text-muted);text-transform:none;">Lv ${lv} · Clean: ${solved} · ${attempted}/${tAll.length}</span><div class="section-progress-track"><div class="section-progress-fill" style="width:${pct}%;background:${pColor}"></div></div></div>`;
+    const safeLabel=topic.label.replace(/'/g,"\\'");
+    sec.innerHTML=`<div class="section-header" style="cursor:pointer" onclick="toggleSection('${safeLabel}')">
+      <span>${topic.label}</span>
+      <span style="margin-left:auto;font-size:11px;color:var(--text-muted);text-transform:none;">Clean: ${solved} · ${attempted}/${tAll.length}</span>
+      <button class="collapse-toggle ${isCollapsed?'collapsed':''}" title="${isCollapsed?'Expand':'Collapse'}" onclick="event.stopPropagation();toggleSection('${safeLabel}')">${isCollapsed?'▶':'▼'}</button>
+      <div class="section-progress-track"><div class="section-progress-fill" style="width:${pct}%;background:${pColor}"></div></div>
+    </div>`;
+    const body=document.createElement('div');body.className='section-body';
+    if(isCollapsed){body.style.display='none';}
     if(tProbs.length>0){
       const tbl=document.createElement('table');tbl.className='problem-table';
       tbl.innerHTML=`<thead><tr><th style="width:20%">Problem</th><th class="sortable" style="width:7%" onclick="setSort('diff')">Diff ${sortArrow('diff')}</th><th class="sortable" style="width:14%" onclick="setSort('mistake')">Diagnostic ${sortArrow('mistake')}</th><th class="sortable" style="width:5%" onclick="setSort('attemptNo')">Att ${sortArrow('attemptNo')}</th><th class="sortable" style="width:10%" onclick="setSort('nextReview')">Next ${sortArrow('nextReview')}</th><th style="width:34%">Reflection</th><th style="width:10%">Actions</th></tr></thead>`;
       const tbody=document.createElement('tbody');
       tProbs.forEach(p=>{
-        const m=MISTAKES[p.mistake||'unsolved'];let dH='<span style="color:var(--text-muted)">—</span>';
-        if(p.nextReview){dH=isDue(p.nextReview)?`<span class="due-badge">⚠ DUE</span>`:`<span class="future-date">${fmtDate(p.nextReview)}</span>`;}
-        tbody.innerHTML+=`<tr><td><a class="prob-link" href="${p.url}" target="_blank">${p.name}</a><br><div style="margin-top:6px">${renderSrcBadges(p.sources||'')}</div></td><td><span class="diff-badge diff-${p.diff||'medium'}">${(p.diff||'medium').charAt(0).toUpperCase()+(p.diff||'medium').slice(1)}</span></td><td><span class="mistake-badge ${m.cls}">${m.lbl}</span></td><td><span class="attempt-count">${p.attemptNo||0}</span></td><td>${dH}</td><td class="reflection-cell">${renderReflection(p.ref)}</td><td><div class="row-actions"><button class="row-btn" onclick="openModal('${topic.label}',${p.id})">✎</button><button class="row-btn del" onclick="deleteProblem(${p.id})">✕</button></div></td></tr>`;
+        const m=MISTAKES[p.mistake||'unsolved'];
+        let dH;
+        if(p.mistake==='none'){dH=`<span class="accepted-badge">✓ Accepted</span>`;}
+        else if(p.nextReview){dH=isDue(p.nextReview)?`<span class="due-badge">⚠ DUE</span>`:`<span class="future-date">${fmtDate(p.nextReview)}</span>`;}
+        else{dH='<span style="color:var(--text-muted)">—</span>';}
+        tbody.innerHTML+=`<tr><td><a class="prob-link" href="${p.url||'#'}" target="_blank">${p.name}</a><br><div style="margin-top:6px">${renderSrcBadges(p.sources||'')}</div></td><td><span class="diff-badge diff-${p.diff||'medium'}">${(p.diff||'medium').charAt(0).toUpperCase()+(p.diff||'medium').slice(1)}</span></td><td><span class="mistake-badge ${m.cls}">${m.lbl}</span></td><td><span class="attempt-count">${p.attemptNo||0}</span></td><td>${dH}</td><td class="reflection-cell">${renderReflection(p.ref)}</td><td><div class="row-actions"><button class="row-btn" onclick="openModal('${topic.label}',${p.id})">✎</button><button class="row-btn del" onclick="deleteProblem(${p.id})">✕</button></div></td></tr>`;
       });
-      tbl.appendChild(tbody);sec.appendChild(tbl);
+      tbl.appendChild(tbody);body.appendChild(tbl);
     }
-    const addBtn=document.createElement('button');addBtn.className='add-row-btn';addBtn.innerHTML=`+ Add problem to ${topic.label}`;addBtn.onclick=()=>openModal(topic.label,null);sec.appendChild(addBtn);container.appendChild(sec);
+    const addBtn=document.createElement('button');addBtn.className='add-row-btn';addBtn.innerHTML=`+ Add problem to ${topic.label}`;addBtn.onclick=()=>openModal(topic.label,null);body.appendChild(addBtn);
+    sec.appendChild(body);container.appendChild(sec);
   });
 }
 
@@ -813,10 +837,7 @@ function drawSkillTree(timestamp){
     ctx.font='500 11px Inter,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(node.topic.short,lx,ly);
     // Level label
-    if(node.tier!=='locked'){
-      ctx.font='600 9px "JetBrains Mono",monospace';ctx.fillStyle=hexToRgba(color,0.7*dm);
-      ctx.fillText(`Lv${node.level}`,lx,ly+13);
-    }
+    // Level sub-label removed (XP system removed)
     ctx.globalAlpha=1;
     // Decay indicator
     if(node.tier!=='locked'&&node.decay<0.85){
@@ -863,7 +884,6 @@ function handleSkillTreeHover(e){
     }
     tt.innerHTML=`<div style="font-weight:600;margin-bottom:2px;color:${getTierColor(hov.tier)}">${hov.topic.label}</div>
       <div style="font-size:11px;margin-bottom:8px">${tierLabels[hov.tier]}</div>
-      <div>Level: <strong>${hov.level}</strong> · XP: <strong>${hov.xp}</strong></div>
       <div style="margin-top:4px;padding-top:6px;border-top:1px solid var(--border)">Clean: <strong>${hov.clean}</strong> / ${hov.total}</div>
       <div>Attempted: <strong>${hov.attempted}</strong></div>
       <div>Mastery: <strong>${pct}%</strong></div>${decayHtml}`;
@@ -915,18 +935,12 @@ function renderDashboard(){
   const att=problems.filter(p=>p.mistake&&p.mistake!=='unsolved');
   const clean=att.filter(p=>p.mistake==='none').length,friction=att.length-clean;
   const dueToday=problems.filter(p=>isDue(p.nextReview)).length;
-  const totalXP=calculateTotalXP(),overallLv=getTopicLevel(Math.floor(totalXP/TOPICS.length));
-
-  // XP badge
-  document.getElementById('total-xp-val').textContent=totalXP.toLocaleString();
-  document.getElementById('total-level').textContent=`· Lv ${overallLv}`;
 
   document.getElementById('metrics').innerHTML=`
     <div class="metric-card"><div class="val" style="color:var(--red)">${dueToday}</div><div class="lbl">Due Today</div></div>
     <div class="metric-card"><div class="val">${att.length}</div><div class="lbl">Attempted</div></div>
     <div class="metric-card"><div class="val" style="color:var(--green)">${clean}</div><div class="lbl">Clean Solves</div></div>
     <div class="metric-card"><div class="val" style="color:var(--orange)">${friction}</div><div class="lbl">Bottlenecks</div></div>
-    <div class="metric-card"><div class="val" style="color:var(--tier-mastered)">${totalXP}</div><div class="lbl">⚡ Total XP</div></div>
   `;
   renderHeatmap();
   // Weakness bars
@@ -935,12 +949,12 @@ function renderDashboard(){
   const wb=document.getElementById('weakness-bars');
   if(friction===0)wb.innerHTML='<p style="font-size:13px;color:var(--text-muted)">Log friction points to generate diagnosis.</p>';
   else wb.innerHTML=Object.entries(weak).sort((a,b)=>b[1]-a[1]).map(([s,sc],i)=>`<div class="weakness-bar"><div class="weakness-bar-label"><span>${s}</span><span style="color:var(--text-muted)">${sc}</span></div><div class="weakness-bar-track"><div class="weakness-bar-fill" style="width:${Math.round(sc/maxS*100)}%;background:${bC[i]}"></div></div></div>`).join('');
-  // Chart
+  // Chart — taller container + rotated labels to fix overlap
   const dk=isDark();
   Chart.defaults.color=dk?'#9ca3af':'#6b7280';Chart.defaults.borderColor=dk?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';Chart.defaults.font.family="'Inter',sans-serif";
   const tc=TOPICS.map(t=>({label:t.short,count:problems.filter(p=>p.topic===t.label&&p.mistake==='none').length}));
   if(topicChart)topicChart.destroy();
-  topicChart=new Chart(document.getElementById('topicChart'),{type:'bar',data:{labels:tc.map(x=>x.label),datasets:[{data:tc.map(x=>x.count),backgroundColor:dk?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.06)',borderColor:dk?'#ffffff':'#111827',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{stepSize:1}}}}});
+  topicChart=new Chart(document.getElementById('topicChart'),{type:'bar',data:{labels:tc.map(x=>x.label),datasets:[{data:tc.map(x=>x.count),backgroundColor:dk?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.06)',borderColor:dk?'#ffffff':'#111827',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45,minRotation:30}},y:{ticks:{stepSize:1}}}}});
 }
 
 // ═══════════════════════════════════════════
